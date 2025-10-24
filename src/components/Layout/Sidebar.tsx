@@ -13,9 +13,9 @@ export default function Sidebar({ activeView, setActiveView, onLogout }: Sidebar
     };
 
     const menuItems = [
-        { id: 'products', label: 'Productos', icon: '📦' },
-        { id: 'stock', label: 'Stock', icon: '📊' },
         { id: 'sales', label: 'Ventas', icon: '💰' },
+        { id: 'stock', label: 'Stock', icon: '📊' },
+        { id: 'products', label: 'Productos', icon: '📦' },
         { id: 'records', label: 'Registros', icon: '📝' },
     ];
 
@@ -33,8 +33,8 @@ export default function Sidebar({ activeView, setActiveView, onLogout }: Sidebar
                             <button
                                 onClick={() => setActiveView(item.id)}
                                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${activeView === item.id
-                                    ? 'bg-blue-600 text-white'
-                                    : 'text-gray-300 hover:bg-gray-800'
+                                        ? 'bg-blue-600 text-white'
+                                        : 'text-gray-300 hover:bg-gray-800'
                                     }`}
                             >
                                 <span className="text-2xl">{item.icon}</span>

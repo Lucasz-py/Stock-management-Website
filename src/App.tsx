@@ -9,7 +9,7 @@ import RecordsView from './components/Records/RecordsView';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [activeView, setActiveView] = useState('products');
+  const [activeView, setActiveView] = useState('sales');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,7 +28,7 @@ function App() {
 
   const handleLogout = () => {
     setIsAuthenticated(false);
-    setActiveView('products');
+    setActiveView('sales');
   };
 
   if (loading) {
@@ -52,8 +52,8 @@ function App() {
       />
 
       {activeView === 'sales' && <SalesView />}
-      {activeView === 'products' && <ProductList />}
       {activeView === 'stock' && <StockManagement />}
+      {activeView === 'products' && <ProductList />}
       {activeView === 'records' && <RecordsView />}
     </div>
   );

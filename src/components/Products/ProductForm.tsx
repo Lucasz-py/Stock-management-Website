@@ -28,6 +28,18 @@ export default function ProductForm({ onSubmit, onCancel, editProduct }: Product
                 stock: editProduct.stock,
             });
             setImagePreview(editProduct.image_url);
+            setImageFile(null);
+        } else {
+            // Reset form when not editing
+            setFormData({
+                name: '',
+                image_url: '',
+                purchase_price: 0,
+                sale_price: 0,
+                stock: 0,
+            });
+            setImageFile(null);
+            setImagePreview('');
         }
     }, [editProduct]);
 
@@ -169,19 +181,13 @@ export default function ProductForm({ onSubmit, onCancel, editProduct }: Product
                             </div>
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Stock Inicial
-                            </label>
-                            <input
-                                type="number"
-                                value={formData.stock}
-                                onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) })}
-                                required
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                                placeholder="0"
-                            />
-                        </div>
+                        {!editProduct && (
+                            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <p className="text-sm text-yellow-800">
+                                    ℹ️ El stock inicial será 0. Podrás ajustarlo desde la sección de Stock.
+                                </p>
+                            </div>
+                        )}
 
                         <div className="flex space-x-3 pt-4">
                             <button
