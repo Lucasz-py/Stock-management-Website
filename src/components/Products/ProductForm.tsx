@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { type Product } from '../../types';
 
 interface ProductFormProps {
-    onSubmit: (product: Omit<Product, 'id' | 'created_at'>) => void;
+    onSubmit: (product: Omit<Product, 'id' | 'created_at'>) => Promise<void>;
     onCancel: () => void;
     editProduct?: Product | null;
 }
@@ -17,6 +17,7 @@ export default function ProductForm({ onSubmit, onCancel, editProduct }: Product
     });
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string>('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         if (editProduct) {
@@ -58,12 +59,12 @@ export default function ProductForm({ onSubmit, onCancel, editProduct }: Product
     };
 
     const uploadImage = async (file: File): Promise<string> => {
-        // Crear un nombre único para la imagen
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+        // NOTA: Las siguientes líneas se eliminaron porque 'fileName' no se usaba.
+        // const fileExt = file.name.split('.').pop();
+        // const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
 
         // Por ahora, convertir la imagen a Base64 y guardarla como string
-        // En producción, deberías usar Supabase Storage
+        // En producción, deberías usar Supabase Storage (y ahí sí usarías un fileName)
         return new Promise((resolve) => {
             const reader = new FileReader();
             reader.onloadend = () => {
@@ -76,28 +77,28 @@ export default function ProductForm({ onSubmit, onCancel, editProduct }: Product
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        let imageUrl = formData.image_url;
+        if (isSubmitting) return; // Evitar múltiples envíos
 
-        // Si hay una nueva imagen, subirla
-        if (imageFile) {
-            imageUrl = await uploadImage(imageFile);
+        setIsSubmitting(true);
+
+        try {
+            let imageUrl = formData.image_url;
+
+            // Si hay una nueva imagen, subirla
+            if (imageFile) {
+                imageUrl = await uploadImage(imageFile);
+            }
+
+            await onSubmit({
+                ...formData,
+                image_url: imageUrl,
+            });
+
+            // NO resetear el formulario aquí, dejar que el componente padre lo maneje
+        } catch (error) {
+            console.error('Error en el formulario:', error);
+            setIsSubmitting(false);
         }
-
-        onSubmit({
-            ...formData,
-            image_url: imageUrl,
-        });
-
-        // Resetear el formulario
-        setFormData({
-            name: '',
-            image_url: '',
-            purchase_price: 0,
-            sale_price: 0,
-            stock: 0,
-        });
-        setImageFile(null);
-        setImagePreview('');
     };
 
     return (
@@ -118,7 +119,8 @@ export default function ProductForm({ onSubmit, onCancel, editProduct }: Product
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                 required
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                                disabled={isSubmitting}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:opacity-50"
                                 placeholder="Ej: Laptop HP"
                             />
                         </div>
@@ -142,7 +144,8 @@ export default function ProductForm({ onSubmit, onCancel, editProduct }: Product
                                 type="file"
                                 accept="image/*"
                                 onChange={handleImageChange}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                disabled={isSubmitting}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
                             />
                             <p className="text-xs text-gray-500 mt-1">
                                 Selecciona una imagen desde tu computadora (JPG, PNG, etc.)
@@ -157,10 +160,12 @@ export default function ProductForm({ onSubmit, onCancel, editProduct }: Product
                                 <input
                                     type="number"
                                     step="0.01"
+                                    min="0"
                                     value={formData.purchase_price}
-                                    onChange={(e) => setFormData({ ...formData, purchase_price: parseFloat(e.target.value) })}
+                                    onChange={(e) => setFormData({ ...formData, purchase_price: parseFloat(e.target.value) || 0 })}
                                     required
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                                    disabled={isSubmitting}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:opacity-50"
                                     placeholder="0.00"
                                 />
                             </div>
@@ -172,10 +177,12 @@ export default function ProductForm({ onSubmit, onCancel, editProduct }: Product
                                 <input
                                     type="number"
                                     step="0.01"
+                                    min="0"
                                     value={formData.sale_price}
-                                    onChange={(e) => setFormData({ ...formData, sale_price: parseFloat(e.target.value) })}
+                                    onChange={(e) => setFormData({ ...formData, sale_price: parseFloat(e.target.value) || 0 })}
                                     required
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                                    disabled={isSubmitting}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:opacity-50"
                                     placeholder="0.00"
                                 />
                             </div>
@@ -193,15 +200,17 @@ export default function ProductForm({ onSubmit, onCancel, editProduct }: Product
                             <button
                                 type="button"
                                 onClick={onCancel}
-                                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+                                disabled={isSubmitting}
+                                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
                             >
                                 Cancelar
                             </button>
                             <button
                                 type="submit"
-                                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                                disabled={isSubmitting}
+                                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {editProduct ? 'Actualizar' : 'Crear Producto'}
+                                {isSubmitting ? 'Guardando...' : (editProduct ? 'Actualizar' : 'Crear Producto')}
                             </button>
                         </div>
                     </form>
@@ -210,3 +219,5 @@ export default function ProductForm({ onSubmit, onCancel, editProduct }: Product
         </div>
     );
 }
+
+// El bloque 'return' duplicado que estaba aquí ha sido eliminado.

@@ -10,6 +10,9 @@ export default function ProductList() {
     const [showForm, setShowForm] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
+    const [successMessage, setSuccessMessage] = useState('');
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [productToDelete, setProductToDelete] = useState<string | null>(null);
 
     useEffect(() => {
         loadProducts();
@@ -30,15 +33,25 @@ export default function ProductList() {
         try {
             if (editingProduct) {
                 await updateProduct(editingProduct.id, productData);
+                setSuccessMessage('✅ Producto actualizado exitosamente');
             } else {
                 await addProduct(productData);
+                setSuccessMessage('✅ Producto creado exitosamente');
             }
+
             await loadProducts();
             setShowForm(false);
             setEditingProduct(null);
+
+            setTimeout(() => {
+                setSuccessMessage('');
+            }, 3000);
         } catch (error) {
             console.error('Error guardando producto:', error);
-            alert('Error al guardar el producto');
+            setSuccessMessage('❌ Error al guardar el producto');
+            setTimeout(() => {
+                setSuccessMessage('');
+            }, 3000);
         }
     };
 
@@ -47,16 +60,37 @@ export default function ProductList() {
         setShowForm(true);
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('¿Estás seguro de eliminar este producto?')) return;
+    const handleDeleteClick = (id: string) => {
+        setProductToDelete(id);
+        setShowDeleteConfirm(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!productToDelete) return;
 
         try {
-            await deleteProduct(id);
+            await deleteProduct(productToDelete);
+            setSuccessMessage('✅ Producto eliminado exitosamente');
             await loadProducts();
+
+            setTimeout(() => {
+                setSuccessMessage('');
+            }, 3000);
         } catch (error) {
             console.error('Error eliminando producto:', error);
-            alert('Error al eliminar el producto');
+            setSuccessMessage('❌ Error al eliminar el producto');
+            setTimeout(() => {
+                setSuccessMessage('');
+            }, 3000);
+        } finally {
+            setShowDeleteConfirm(false);
+            setProductToDelete(null);
         }
+    };
+
+    const cancelDelete = () => {
+        setShowDeleteConfirm(false);
+        setProductToDelete(null);
     };
 
     const handleCancel = () => {
@@ -76,6 +110,16 @@ export default function ProductList() {
 
     return (
         <MainLayout title="Productos">
+            {/* Mensaje de éxito/error */}
+            {successMessage && (
+                <div className={`mb-6 p-4 rounded-lg shadow-lg animate-slide-down ${successMessage.includes('❌')
+                    ? 'bg-red-50 border-2 border-red-500 text-red-800'
+                    : 'bg-green-50 border-2 border-green-500 text-green-800'
+                    }`}>
+                    <p className="font-semibold text-center text-lg">{successMessage}</p>
+                </div>
+            )}
+
             <div className="mb-6">
                 <button
                     onClick={() => setShowForm(true)}
@@ -102,7 +146,7 @@ export default function ProductList() {
                             key={product.id}
                             product={product}
                             onEdit={handleEdit}
-                            onDelete={handleDelete}
+                            onDelete={handleDeleteClick}
                         />
                     ))}
                 </div>
@@ -114,6 +158,38 @@ export default function ProductList() {
                     onCancel={handleCancel}
                     editProduct={editingProduct}
                 />
+            )}
+
+            {/* Modal de confirmación de eliminación */}
+            {showDeleteConfirm && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
+                        <div className="text-center mb-6">
+                            <div className="text-6xl mb-4">⚠️</div>
+                            <h3 className="text-xl font-bold text-gray-800 mb-2">
+                                ¿Estás seguro?
+                            </h3>
+                            <p className="text-gray-600">
+                                Esta acción no se puede deshacer. El producto será eliminado permanentemente.
+                            </p>
+                        </div>
+
+                        <div className="flex space-x-3">
+                            <button
+                                onClick={cancelDelete}
+                                className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-semibold"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={confirmDelete}
+                                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold"
+                            >
+                                Sí, Eliminar
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </MainLayout>
     );

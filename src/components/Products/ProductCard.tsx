@@ -8,7 +8,8 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, onEdit, onDelete }: ProductCardProps) {
     return (
-        <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300">
+        // <!-- CAMBIO AQUÍ: Añadimos 'flex flex-col' para que la tarjeta sea un contenedor flex vertical -->
+        <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300 flex flex-col">
             <div className="h-48 bg-gray-200 flex items-center justify-center overflow-hidden">
                 <img
                     src={product.image_url}
@@ -20,7 +21,12 @@ export default function ProductCard({ product, onEdit, onDelete }: ProductCardPr
                 />
             </div>
 
-            <div className="p-4">
+            {/* <!-- CAMBIO AQUÍ: Añadimos 'flex flex-col flex-1' -->
+                'flex': lo convierte en contenedor flex
+                'flex-col': apila los hijos verticalmente
+                'flex-1': hace que este div crezca para llenar todo el espacio vertical disponible
+            */}
+            <div className="p-4 flex flex-col flex-1">
                 <h3 className="text-xl font-bold text-gray-800 mb-2">{product.name}</h3>
 
                 <div className="space-y-2 mb-4">
@@ -40,7 +46,10 @@ export default function ProductCard({ product, onEdit, onDelete }: ProductCardPr
                     </div>
                 </div>
 
-                <div className="flex space-x-2">
+                {/* <!-- CAMBIO AQUÍ: Añadimos 'mt-auto' (margin-top: auto) -->
+                    Esto empuja este div (los botones) hacia el fondo del contenedor flex ('p-4')
+                */}
+                <div className="flex space-x-2 mt-auto">
                     <button
                         onClick={() => onEdit(product)}
                         className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg transition"
