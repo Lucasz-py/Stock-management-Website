@@ -1,6 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { type Product } from '../../types';
-import { getProducts, addProduct, updateProduct, deleteProduct } from '../../lib/supabase';
+import {
+    getProducts,
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    deleteProductImage
+} from '../../lib/supabase';
 import ProductCard from './ProductCard';
 import ProductForm from './ProductForm';
 import MainLayout from '../Layout/MainLayout';
@@ -32,6 +38,13 @@ export default function ProductList() {
     const handleAddProduct = async (productData: Omit<Product, 'id' | 'created_at'>) => {
         try {
             if (editingProduct) {
+                // Si la URL de la imagen cambió, elimina la antigua del storage
+                if (productData.image_url !== editingProduct.image_url) {
+                    deleteProductImage(editingProduct.image_url).catch(err => {
+                        console.error("Fallo al eliminar imagen antigua:", err);
+                    });
+                }
+
                 await updateProduct(editingProduct.id, productData);
                 setSuccessMessage('✅ Producto actualizado exitosamente');
             } else {
@@ -48,30 +61,49 @@ export default function ProductList() {
             }, 3000);
         } catch (error) {
             console.error('Error guardando producto:', error);
+
+            // 1. Muestra el mensaje de error en el fondo
             setSuccessMessage('❌ Error al guardar el producto');
             setTimeout(() => {
                 setSuccessMessage('');
             }, 3000);
+
+            // 2. ¡Importante! Relanza el error para que el formulario lo atrape
+            throw error;
         }
     };
 
-    const handleEdit = (product: Product) => {
+    // Optimizamos las funciones con useCallback
+    const handleEdit = useCallback((product: Product) => {
         setEditingProduct(product);
         setShowForm(true);
-    };
+    }, []); // Array vacío = la función nunca cambia
 
-    const handleDeleteClick = (id: string) => {
+    const handleDeleteClick = useCallback((id: string) => {
         setProductToDelete(id);
         setShowDeleteConfirm(true);
-    };
+    }, []); // Array vacío = la función nunca cambia
 
     const confirmDelete = async () => {
         if (!productToDelete) return;
 
         try {
+            // Buscamos el producto en el estado actual para obtener su URL
+            const product = products.find(p => p.id === productToDelete);
+
+            // 1. Eliminar el producto de la base de datos
             await deleteProduct(productToDelete);
+
+            // 2. Si se eliminó bien y tenía imagen, borrarla del storage
+            if (product && product.image_url) {
+                // Llamamos sin 'await' para no bloquear la UI
+                deleteProductImage(product.image_url).catch(err => {
+                    console.error("Fallo al eliminar imagen:", err);
+                });
+            }
+
             setSuccessMessage('✅ Producto eliminado exitosamente');
-            await loadProducts();
+            await loadProducts(); // Recargamos la lista
 
             setTimeout(() => {
                 setSuccessMessage('');

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { type Product } from '../../types';
+import { uploadProductImage } from '../../lib/supabase';
 
 interface ProductFormProps {
     onSubmit: (product: Omit<Product, 'id' | 'created_at'>) => Promise<void>;
@@ -19,6 +20,9 @@ export default function ProductForm({ onSubmit, onCancel, editProduct }: Product
     const [imagePreview, setImagePreview] = useState<string>('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Nuevo estado para el error del formulario
+    const [formError, setFormError] = useState<string | null>(null);
+
     useEffect(() => {
         if (editProduct) {
             setFormData({
@@ -31,7 +35,7 @@ export default function ProductForm({ onSubmit, onCancel, editProduct }: Product
             setImagePreview(editProduct.image_url);
             setImageFile(null);
         } else {
-            // Reset form when not editing
+            // Resetear formulario para "Nuevo Producto"
             setFormData({
                 name: '',
                 image_url: '',
@@ -42,14 +46,18 @@ export default function ProductForm({ onSubmit, onCancel, editProduct }: Product
             setImageFile(null);
             setImagePreview('');
         }
+
+        // Limpiar error y estado 'submitting' al cambiar de modo
+        setFormError(null);
+        setIsSubmitting(false);
+
     }, [editProduct]);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
             setImageFile(file);
-
-            // Crear preview de la imagen
+            // Generar vista previa local
             const reader = new FileReader();
             reader.onloadend = () => {
                 setImagePreview(reader.result as string);
@@ -58,45 +66,45 @@ export default function ProductForm({ onSubmit, onCancel, editProduct }: Product
         }
     };
 
-    const uploadImage = async (file: File): Promise<string> => {
-        // NOTA: Las siguientes líneas se eliminaron porque 'fileName' no se usaba.
-        // const fileExt = file.name.split('.').pop();
-        // const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
-
-        // Por ahora, convertir la imagen a Base64 y guardarla como string
-        // En producción, deberías usar Supabase Storage (y ahí sí usarías un fileName)
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                resolve(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-        });
-    };
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
-        if (isSubmitting) return; // Evitar múltiples envíos
+        if (isSubmitting) return;
 
         setIsSubmitting(true);
+        setFormError(null); // Limpiar error anterior
 
         try {
             let imageUrl = formData.image_url;
 
-            // Si hay una nueva imagen, subirla
+            // 1. Si hay un archivo nuevo, subirlo primero
             if (imageFile) {
-                imageUrl = await uploadImage(imageFile);
+                imageUrl = await uploadProductImage(imageFile);
             }
 
+            // 2. Llamar a la lógica de guardado (addProduct/updateProduct)
+            // Si esto falla, el 'throw' en ProductList hará que salte al catch
             await onSubmit({
                 ...formData,
                 image_url: imageUrl,
             });
 
-            // NO resetear el formulario aquí, dejar que el componente padre lo maneje
+            // Si onSubmit tiene éxito, ProductList cerrará el modal.
+            // No necesitamos poner setIsSubmitting(false) aquí.
+
         } catch (error) {
             console.error('Error en el formulario:', error);
+
+            // 3. Mostrar el error al usuario dentro del modal
+            let errorMessage = "Ocurrió un error desconocido.";
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+            // Puedes personalizar mensajes comunes de Supabase aquí si quieres
+            // ej: if (errorMessage.includes("RLS")) { ... }
+
+            setFormError(`❌ Error al guardar: ${errorMessage}`);
+
+            // 4. ¡Importante! Reactivar el botón para que pueda reintentar
             setIsSubmitting(false);
         }
     };
@@ -196,6 +204,15 @@ export default function ProductForm({ onSubmit, onCancel, editProduct }: Product
                             </div>
                         )}
 
+                        {/* --- Bloque para mostrar el error --- */}
+                        {formError && (
+                            <div className="p-3 bg-red-50 border border-red-300 rounded-lg">
+                                <p className="text-sm text-red-800 font-medium">{formError}</p>
+                            </div>
+                        )}
+                        {/* --- Fin del bloque de error --- */}
+
+
                         <div className="flex space-x-3 pt-4">
                             <button
                                 type="button"
@@ -219,5 +236,3 @@ export default function ProductForm({ onSubmit, onCancel, editProduct }: Product
         </div>
     );
 }
-
-// El bloque 'return' duplicado que estaba aquí ha sido eliminado.
