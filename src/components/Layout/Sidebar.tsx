@@ -38,10 +38,12 @@ export default function Sidebar({ activeView, setActiveView, onLogout }: Sidebar
                         <li key={item.id}>
                             <button
                                 onClick={() => setActiveView(item.id)}
+                                // --- LÍNEA MODIFICADA ---
                                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${activeView === item.id
-                                    ? 'bg-blue-600 text-white'
+                                    ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white' // <-- ¡CAMBIO A GRADIENTE!
                                     : 'text-gray-300 hover:bg-gray-800'
                                     }`}
+                            // --- FIN DE LÍNEA MODIFICADA ---
                             >
                                 <span className="text-2xl">{item.icon}</span>
                                 <span className="font-medium">{item.label}</span>
@@ -52,21 +54,15 @@ export default function Sidebar({ activeView, setActiveView, onLogout }: Sidebar
             </nav>
 
             {/* 3. Espaciador y Mandala */}
-            {/* - flex-1: Ocupa todo el espacio restante, empujando el botón de logout hacia abajo.
-                - relative: Permite posicionar el mandala de forma absoluta dentro de este div. */}
             <div className="flex-1 relative">
                 <img
                     src="/mandala.png"
                     alt="Mandala"
-                    /* - absolute: Posiciona la imagen respecto al div padre (que es 'relative').
-                       - bottom-0 left-0: La pega en la esquina inferior izquierda.
-                       - w-32: La hace más pequeña (128px). Puedes cambiarlo (ej: w-24, w-40).
-                       - opacity-30: La mantiene sutil. */
                     className="absolute bottom-0 left-0 w-32 h-auto opacity-30 invert"
                 />
             </div>
 
-            {/* 4. Sección de Cerrar Sesión (Restaurada) */}
+            {/* 4. Sección de Cerrar Sesión */}
             <div className="p-4 border-t border-gray-700">
                 <button
                     onClick={handleLogout}

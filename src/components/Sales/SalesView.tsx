@@ -217,8 +217,10 @@ export default function SalesView() {
                                                 key={product.id}
                                                 onClick={() => addToCart(product)}
                                                 disabled={product.stock === 0}
-                                                className={`w-full p-4 flex items-center space-x-4 hover:bg-gray-50 transition ${inCart ? 'bg-green-50 border-l-4 border-green-600' : ''
-                                                    } ${product.stock === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+
+                                                // --- LÍNEA CORREGIDA ---
+                                                // Se eliminó la '}' extra después de ''
+                                                className={`w-full p-4 flex items-center space-x-4 hover:bg-gray-50 transition ${inCart ? 'bg-green-50 border-l-4 border-green-600' : ''} ${product.stock === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                                             >
                                                 <img
                                                     src={product.image_url}
@@ -257,9 +259,11 @@ export default function SalesView() {
                 {/* Carrito de Compras */}
                 <div>
                     <div className="bg-white rounded-xl shadow-md overflow-hidden sticky top-8">
-                        <div className="bg-gradient-to-r from-green-500 to-blue-500 p-6 text-white">
+
+                        {/* Gradiente Morado/Azul */}
+                        <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-6 text-white">
                             <h2 className="text-2xl font-bold mb-2">Carrito de Venta</h2>
-                            <p className="text-green-100">
+                            <p className="text-purple-100">
                                 {cart.length === 0 ? 'Agrega productos al carrito' : `${cartItemsCount} producto(s) en el carrito`}
                             </p>
                         </div>
