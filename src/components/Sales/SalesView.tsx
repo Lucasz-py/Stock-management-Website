@@ -201,7 +201,7 @@ export default function SalesView() {
                                 {searchTerm === '' && (
                                     <div className="p-4 bg-blue-50 border-b border-blue-100">
                                         <p className="text-sm text-blue-800 font-medium">
-                                            📋 Mostrando todos los productos ({products.length})
+                                            📋 Todos los productos ({products.length})
                                         </p>
                                         <p className="text-xs text-blue-600 mt-1">
                                             Haz clic en un producto para agregarlo al carrito
