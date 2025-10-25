@@ -129,7 +129,7 @@ export default function ProductForm({ onSubmit, onCancel, editProduct }: Product
                                 required
                                 disabled={isSubmitting}
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:opacity-50"
-                                placeholder="Ej: Laptop HP"
+                                placeholder="Ej: Sahumerio"
                             />
                         </div>
 
