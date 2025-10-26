@@ -59,7 +59,7 @@ export default function SaleForm({ selectedProduct, onSubmit }: SaleFormProps) {
                     <div className="flex-1">
                         <h3 className="text-xl font-bold text-gray-800 mb-1">{selectedProduct.name}</h3>
                         <p className="text-gray-600">Precio: ${selectedProduct.sale_price.toFixed(2)}</p>
-                        <p className={`font-medium ${selectedProduct.stock < 10 ? 'text-red-600' : 'text-green-600'}`}>
+                        <p className={`font-medium ${selectedProduct.stock < 5 ? 'text-red-600' : 'text-green-600'}`}>
                             Stock disponible: {selectedProduct.stock} unidades
                         </p>
                     </div>

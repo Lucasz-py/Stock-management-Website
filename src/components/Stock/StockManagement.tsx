@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { type Product } from '../../types';
 import { getProducts, updateProduct } from '../../lib/supabase';
+import { useSettings } from '../../contexts/SettingsContext';
 import StockItem from './StockItem';
 import MainLayout from '../Layout/MainLayout';
 
@@ -8,6 +9,10 @@ export default function StockManagement() {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    // NUEVO: Estado para el filtro de stock
+    const [stockFilter, setStockFilter] = useState<'all' | 'low' | 'none'>('all');
+
+    const { showInventoryValue, showProfitValue } = useSettings();
 
     useEffect(() => {
         loadProducts();
@@ -34,19 +39,37 @@ export default function StockManagement() {
         }
     };
 
-    const filteredProducts = products.filter((product) =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // MODIFICADO: Lógica de filtrado
+    const filteredProducts = products
+        .filter((product) => // 1. Filtro por búsqueda de texto
+            product.name.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        .filter((product) => { // 2. Filtro por estado de stock
+            if (stockFilter === 'low') {
+                // Stock bajo (entre 1 y 9)
+                return product.stock > 0 && product.stock < 10;
+            }
+            if (stockFilter === 'none') {
+                // Sin stock
+                return product.stock === 0;
+            }
+            // 'all' (default)
+            return true;
+        });
 
-    const lowStockCount = products.filter((p) => p.stock < 10).length;
+    const lowStockCount = products.filter((p) => p.stock > 0 && p.stock < 10).length; // Ajustado para no incluir 'sin stock'
     const outOfStockCount = products.filter((p) => p.stock === 0).length;
-    const totalValue = products.reduce((sum, p) => sum + (p.stock * p.purchase_price), 0);
+
+    const totalPurchaseValue = products.reduce((sum, p) => sum + (p.stock * p.purchase_price), 0);
+    const totalSaleValue = products.reduce((sum, p) => sum + (p.stock * p.sale_price), 0);
+    const totalProfit = totalSaleValue - totalPurchaseValue;
+
 
     if (loading) {
         return (
             <MainLayout title="Gestión de Stock">
                 <div className="flex items-center justify-center h-64">
-                    <div className="text-gray-500">Cargando stock...</div>
+                    <div className="text-gray-500 dark:text-gray-400">Cargando stock...</div>
                 </div>
             </MainLayout>
         );
@@ -55,85 +78,153 @@ export default function StockManagement() {
     return (
         <MainLayout title="Gestión de Stock">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <div className="bg-white rounded-xl shadow-md p-6">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 transition-colors">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-gray-600 text-sm mb-1">Productos Totales</p>
-                            <p className="text-3xl font-bold text-gray-800">{products.length}</p>
+                            <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Productos Totales</p>
+                            <p className="text-3xl font-bold text-gray-800 dark:text-white">{products.length}</p>
                         </div>
                         <div className="text-5xl">📦</div>
                     </div>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-md p-6">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 transition-colors">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-gray-600 text-sm mb-1">Stock Bajo</p>
-                            <p className="text-3xl font-bold text-yellow-600">{lowStockCount}</p>
+                            <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Stock Bajo (1-9)</p>
+                            <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">{lowStockCount}</p>
                         </div>
                         <div className="text-5xl">⚠️</div>
                     </div>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-md p-6">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 transition-colors">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-gray-600 text-sm mb-1">Sin Stock</p>
-                            <p className="text-3xl font-bold text-red-600">{outOfStockCount}</p>
+                            <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Sin Stock</p>
+                            <p className="text-3xl font-bold text-red-600 dark:text-red-400">{outOfStockCount}</p>
                         </div>
                         <div className="text-5xl">🚫</div>
                     </div>
                 </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-semibold text-gray-800">Valor Total del Inventario</h2>
-                    <p className="text-3xl font-bold text-green-600">${totalValue.toFixed(2)}</p>
+            {/* Valor Total del Inventario (Compra) - Condicional */}
+            {showInventoryValue && (
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6 transition-colors">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Valor de Compra (Costo del Inventario)</h2>
+                        <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                            ${totalPurchaseValue.toFixed(2)}
+                        </p>
+                    </div>
                 </div>
-            </div>
+            )}
 
-            <div className="bg-white rounded-xl shadow-md overflow-hidden">
-                <div className="p-6 border-b border-gray-200">
+            {/* Reporte de Ganancias (Potencial) - Condicional */}
+            {showProfitValue && (
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6 transition-colors">
+                    <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
+                        Reporte de Ganancias (Potenciales)
+                    </h2>
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <p className="text-gray-600 dark:text-gray-300">Valor de Venta Total:</p>
+                            <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                                ${totalSaleValue.toFixed(2)}
+                            </p>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <p className="text-gray-600 dark:text-gray-300">Valor de Compra Total:</p>
+                            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                ${totalPurchaseValue.toFixed(2)}
+                            </p>
+                        </div>
+                        <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
+                        <div className="flex items-center justify-between">
+                            <p className="text-lg font-semibold text-gray-800 dark:text-white">Ganancia Potencial Total:</p>
+                            <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                                ${totalProfit.toFixed(2)}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden transition-colors">
+                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                    {/* Buscador */}
                     <input
                         type="text"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         placeholder="Buscar producto..."
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                     />
+
+                    {/* NUEVO: Botones de filtro */}
+                    <div className="flex flex-wrap items-center gap-3 mt-4">
+                        <span className="text-gray-700 dark:text-gray-200 font-medium">Filtrar por:</span>
+                        <button
+                            onClick={() => setStockFilter('all')}
+                            className={`px-4 py-2 rounded-lg font-medium transition text-sm ${stockFilter === 'all'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
+                                }`}
+                        >
+                            Todos
+                        </button>
+                        <button
+                            onClick={() => setStockFilter('low')}
+                            className={`px-4 py-2 rounded-lg font-medium transition text-sm ${stockFilter === 'low'
+                                ? 'bg-yellow-500 text-white' // Color temático
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
+                                }`}
+                        >
+                            Stock Bajo
+                        </button>
+                        <button
+                            onClick={() => setStockFilter('none')}
+                            className={`px-4 py-2 rounded-lg font-medium transition text-sm ${stockFilter === 'none'
+                                ? 'bg-red-500 text-white' // Color temático
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
+                                }`}
+                        >
+                            Sin Stock
+                        </button>
+                    </div>
                 </div>
 
                 {filteredProducts.length === 0 ? (
                     <div className="p-12 text-center">
                         <div className="text-6xl mb-4">🔍</div>
-                        <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                        <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
                             No se encontraron productos
                         </h3>
-                        <p className="text-gray-500">
-                            Intenta con otro término de búsqueda
+                        <p className="text-gray-500 dark:text-gray-400">
+                            Ajusta los filtros o el término de búsqueda
                         </p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="bg-gray-50">
+                            <thead className="bg-gray-50 dark:bg-gray-700">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                         Producto
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                         Estado
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                         Stock
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                         Acciones
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                 {filteredProducts.map((product) => (
                                     <StockItem
                                         key={product.id}

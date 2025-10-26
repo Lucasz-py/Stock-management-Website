@@ -8,6 +8,7 @@ export default {
         "./index.html",
         "./src/**/*.{js,ts,jsx,tsx}",
     ],
+    darkMode: 'class', // ← AGREGADO: Habilita modo oscuro con clase
     theme: {
         extend: {
             // 2. Agregamos la nueva configuración de fuente

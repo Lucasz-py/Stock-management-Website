@@ -87,7 +87,6 @@ export default function SalesView() {
         }
 
         try {
-            // Registrar cada venta
             for (const item of cart) {
                 await addSale({
                     product_id: item.product.id,
@@ -97,25 +96,20 @@ export default function SalesView() {
                     total: item.product.sale_price * item.quantity,
                 });
 
-                // Actualizar el stock
                 const newStock = item.product.stock - item.quantity;
                 await updateProduct(item.product.id, { stock: newStock });
             }
 
-            // Recargar productos
             await loadProducts();
 
             const total = cart.reduce((sum, item) => sum + (item.product.sale_price * item.quantity), 0);
             const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-            // Mostrar mensaje de éxito
             setSuccessMessage(`✅ ¡Venta registrada exitosamente! ${totalItems} producto(s) - Total: $${total.toFixed(2)}`);
 
-            // Limpiar el carrito
             setCart([]);
             setSearchTerm('');
 
-            // Ocultar mensaje después de 5 segundos
             setTimeout(() => {
                 setSuccessMessage('');
             }, 5000);
@@ -141,7 +135,7 @@ export default function SalesView() {
         return (
             <MainLayout title="Ventas">
                 <div className="flex items-center justify-center h-64">
-                    <div className="text-gray-500">Cargando productos...</div>
+                    <div className="text-gray-500 dark:text-gray-400">Cargando productos...</div>
                 </div>
             </MainLayout>
         );
@@ -149,11 +143,10 @@ export default function SalesView() {
 
     return (
         <MainLayout title="Ventas">
-            {/* Mensaje de éxito/error */}
             {successMessage && (
                 <div className={`mb-6 p-4 rounded-lg shadow-lg animate-slide-down ${successMessage.includes('❌') || successMessage.includes('⚠️')
-                    ? 'bg-red-50 border-2 border-red-500 text-red-800'
-                    : 'bg-green-50 border-2 border-green-500 text-green-800'
+                    ? 'bg-red-50 dark:bg-red-900 border-2 border-red-500 text-red-800 dark:text-red-200'
+                    : 'bg-green-50 dark:bg-green-900 border-2 border-green-500 text-green-800 dark:text-green-200'
                     }`}>
                     <p className="font-semibold text-center text-lg">{successMessage}</p>
                 </div>
@@ -162,8 +155,8 @@ export default function SalesView() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Lista de Productos */}
                 <div>
-                    <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-                        <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6">
+                        <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
                             Buscar o Seleccionar Producto
                         </h2>
                         <input
@@ -171,45 +164,45 @@ export default function SalesView() {
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="Escribe el nombre del producto..."
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-lg"
+                            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                         />
                     </div>
 
-                    <div className="bg-white rounded-xl shadow-md overflow-hidden max-h-[600px] overflow-y-auto">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden max-h-[600px] overflow-y-auto">
                         {products.length === 0 ? (
                             <div className="p-12 text-center">
                                 <div className="text-6xl mb-4">📦</div>
-                                <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                                <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
                                     No hay productos disponibles
                                 </h3>
-                                <p className="text-gray-500">
+                                <p className="text-gray-500 dark:text-gray-400">
                                     Agrega productos desde la sección de Productos
                                 </p>
                             </div>
                         ) : filteredProducts.length === 0 ? (
                             <div className="p-12 text-center">
                                 <div className="text-6xl mb-4">❌</div>
-                                <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                                <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
                                     No se encontró el producto
                                 </h3>
-                                <p className="text-gray-500">
+                                <p className="text-gray-500 dark:text-gray-400">
                                     Intenta con otro nombre
                                 </p>
                             </div>
                         ) : (
                             <div>
                                 {searchTerm === '' && (
-                                    <div className="p-4 bg-blue-50 border-b border-blue-100">
-                                        <p className="text-sm text-blue-800 font-medium">
+                                    <div className="p-4 bg-blue-50 dark:bg-blue-900 border-b border-blue-100 dark:border-blue-800">
+                                        <p className="text-sm text-blue-800 dark:text-blue-200 font-medium">
                                             📋 Todos los productos ({products.length})
                                         </p>
-                                        <p className="text-xs text-blue-600 mt-1">
+                                        <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
                                             Haz clic en un producto para agregarlo al carrito
                                         </p>
                                     </div>
                                 )}
 
-                                <div className="divide-y divide-gray-200">
+                                <div className="divide-y divide-gray-200 dark:divide-gray-700">
                                     {filteredProducts.map((product) => {
                                         const inCart = cart.find(item => item.product.id === product.id);
                                         return (
@@ -217,10 +210,7 @@ export default function SalesView() {
                                                 key={product.id}
                                                 onClick={() => addToCart(product)}
                                                 disabled={product.stock === 0}
-
-                                                // --- LÍNEA CORREGIDA ---
-                                                // Se eliminó la '}' extra después de ''
-                                                className={`w-full p-4 flex items-center space-x-4 hover:bg-gray-50 transition ${inCart ? 'bg-green-50 border-l-4 border-green-600' : ''} ${product.stock === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                className={`w-full p-4 flex items-center space-x-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition ${inCart ? 'bg-green-50 dark:bg-green-900 border-l-4 border-green-600' : ''} ${product.stock === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                                             >
                                                 <img
                                                     src={product.image_url}
@@ -231,11 +221,11 @@ export default function SalesView() {
                                                     }}
                                                 />
                                                 <div className="flex-1 text-left">
-                                                    <h3 className="font-semibold text-gray-800">{product.name}</h3>
-                                                    <p className="text-sm text-gray-600">
+                                                    <h3 className="font-semibold text-gray-800 dark:text-white">{product.name}</h3>
+                                                    <p className="text-sm text-gray-600 dark:text-gray-400">
                                                         Precio: ${product.sale_price.toFixed(2)}
                                                     </p>
-                                                    <p className={`text-sm font-medium ${product.stock < 10 ? 'text-red-600' : 'text-green-600'}`}>
+                                                    <p className={`text-sm font-medium ${product.stock < 5 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
                                                         Stock: {product.stock} unidades
                                                     </p>
                                                 </div>
@@ -258,9 +248,7 @@ export default function SalesView() {
 
                 {/* Carrito de Compras */}
                 <div>
-                    <div className="bg-white rounded-xl shadow-md overflow-hidden sticky top-8">
-
-                        {/* Gradiente Morado/Azul */}
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden sticky top-8">
                         <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-6 text-white">
                             <h2 className="text-2xl font-bold mb-2">Carrito de Venta</h2>
                             <p className="text-purple-100">
@@ -271,16 +259,16 @@ export default function SalesView() {
                         {cart.length === 0 ? (
                             <div className="p-12 text-center">
                                 <div className="text-6xl mb-4">🛒</div>
-                                <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                                <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
                                     Carrito vacío
                                 </h3>
-                                <p className="text-gray-500">
+                                <p className="text-gray-500 dark:text-gray-400">
                                     Selecciona productos para agregarlos al carrito
                                 </p>
                             </div>
                         ) : (
                             <div>
-                                <div className="max-h-[400px] overflow-y-auto divide-y divide-gray-200">
+                                <div className="max-h-[400px] overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700">
                                     {cart.map((item) => (
                                         <div key={item.product.id} className="p-4">
                                             <div className="flex items-start space-x-3 mb-3">
@@ -293,18 +281,18 @@ export default function SalesView() {
                                                     }}
                                                 />
                                                 <div className="flex-1">
-                                                    <h4 className="font-semibold text-gray-800">{item.product.name}</h4>
-                                                    <p className="text-sm text-gray-600">${item.product.sale_price.toFixed(2)} c/u</p>
+                                                    <h4 className="font-semibold text-gray-800 dark:text-white">{item.product.name}</h4>
+                                                    <p className="text-sm text-gray-600 dark:text-gray-400">${item.product.sale_price.toFixed(2)} c/u</p>
                                                 </div>
                                                 <button
                                                     onClick={() => removeFromCart(item.product.id)}
-                                                    className="text-red-500 hover:text-red-700 text-xl"
+                                                    className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-xl"
                                                 >
                                                     🗑️
                                                 </button>
                                             </div>
 
-                                            <div className="flex items-center justify-between bg-gray-50 rounded-lg p-2">
+                                            <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 rounded-lg p-2">
                                                 <div className="flex items-center space-x-2">
                                                     <button
                                                         onClick={() => updateCartQuantity(item.product.id, item.quantity - 1)}
@@ -318,7 +306,7 @@ export default function SalesView() {
                                                         max={item.product.stock}
                                                         value={item.quantity}
                                                         onChange={(e) => updateCartQuantity(item.product.id, parseInt(e.target.value) || 1)}
-                                                        className="w-16 text-center border border-gray-300 rounded-lg py-1 font-semibold"
+                                                        className="w-16 text-center border border-gray-300 dark:border-gray-600 rounded-lg py-1 font-semibold bg-white dark:bg-gray-800 text-gray-800 dark:text-white"
                                                     />
                                                     <button
                                                         onClick={() => updateCartQuantity(item.product.id, item.quantity + 1)}
@@ -328,7 +316,7 @@ export default function SalesView() {
                                                     </button>
                                                 </div>
                                                 <div className="text-right">
-                                                    <p className="text-lg font-bold text-gray-800">
+                                                    <p className="text-lg font-bold text-gray-800 dark:text-white">
                                                         ${(item.product.sale_price * item.quantity).toFixed(2)}
                                                     </p>
                                                 </div>
@@ -337,10 +325,10 @@ export default function SalesView() {
                                     ))}
                                 </div>
 
-                                <div className="p-6 bg-blue-50 border-t-2 border-blue-200">
+                                <div className="p-6 bg-blue-50 dark:bg-gray-700 border-t-2 border-blue-200 dark:border-gray-600">
                                     <div className="flex justify-between items-center mb-4">
-                                        <span className="text-lg font-bold text-gray-800">Total:</span>
-                                        <span className="text-3xl font-bold text-green-600">
+                                        <span className="text-lg font-bold text-gray-800 dark:text-white">Total:</span>
+                                        <span className="text-3xl font-bold text-green-600 dark:text-green-400">
                                             ${cartTotal.toFixed(2)}
                                         </span>
                                     </div>

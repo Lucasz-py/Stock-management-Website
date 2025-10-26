@@ -134,7 +134,8 @@ export default function ProductList() {
         return (
             <MainLayout title="Productos">
                 <div className="flex items-center justify-center h-64">
-                    <div className="text-gray-500">Cargando productos...</div>
+                    {/* CAMBIO: Texto de carga oscuro */}
+                    <div className="text-gray-500 dark:text-gray-400">Cargando productos...</div>
                 </div>
             </MainLayout>
         );
@@ -144,9 +145,10 @@ export default function ProductList() {
         <MainLayout title="Productos">
             {/* Mensaje de éxito/error */}
             {successMessage && (
+                // CAMBIO: Estilos dark: para el mensaje
                 <div className={`mb-6 p-4 rounded-lg shadow-lg animate-slide-down ${successMessage.includes('❌')
-                    ? 'bg-red-50 border-2 border-red-500 text-red-800'
-                    : 'bg-green-50 border-2 border-green-500 text-green-800'
+                    ? 'bg-red-50 border-2 border-red-500 text-red-800 dark:bg-red-900 dark:border-red-700 dark:text-red-200'
+                    : 'bg-green-50 border-2 border-green-500 text-green-800 dark:bg-green-900 dark:border-green-700 dark:text-green-200'
                     }`}>
                     <p className="font-semibold text-center text-lg">{successMessage}</p>
                 </div>
@@ -162,12 +164,13 @@ export default function ProductList() {
             </div>
 
             {products.length === 0 ? (
-                <div className="bg-white rounded-xl shadow-md p-12 text-center">
+                // CAMBIO: Estilos dark: para el estado vacío
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-12 text-center">
                     <div className="text-6xl mb-4">📦</div>
-                    <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                    <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">
                         No hay productos registrados
                     </h3>
-                    <p className="text-gray-500">
+                    <p className="text-gray-500 dark:text-gray-400">
                         Comienza agregando tu primer producto
                     </p>
                 </div>
@@ -195,13 +198,14 @@ export default function ProductList() {
             {/* Modal de confirmación de eliminación */}
             {showDeleteConfirm && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
+                    {/* CAMBIO: Estilos dark: para el modal de borrado */}
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-md">
                         <div className="text-center mb-6">
                             <div className="text-6xl mb-4">⚠️</div>
-                            <h3 className="text-xl font-bold text-gray-800 mb-2">
+                            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
                                 ¿Estás seguro?
                             </h3>
-                            <p className="text-gray-600">
+                            <p className="text-gray-600 dark:text-gray-300">
                                 Esta acción no se puede deshacer. El producto será eliminado permanentemente.
                             </p>
                         </div>
@@ -209,7 +213,7 @@ export default function ProductList() {
                         <div className="flex space-x-3">
                             <button
                                 onClick={cancelDelete}
-                                className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-semibold"
+                                className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-semibold dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
                             >
                                 Cancelar
                             </button>

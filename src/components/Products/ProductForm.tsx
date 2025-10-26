@@ -111,15 +111,18 @@ export default function ProductForm({ onSubmit, onCancel, editProduct }: Product
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            {/* CAMBIO: Fondo del modal */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
                 <div className="p-6">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-6">
+                    {/* CAMBIO: Color de texto del título */}
+                    <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">
                         {editProduct ? 'Editar Producto' : 'Nuevo Producto'}
                     </h2>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            {/* CAMBIO: Color de texto del label */}
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                                 Nombre del Producto
                             </label>
                             <input
@@ -128,13 +131,15 @@ export default function ProductForm({ onSubmit, onCancel, editProduct }: Product
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                 required
                                 disabled={isSubmitting}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:opacity-50"
+                                // CAMBIO: Estilos dark: para el input
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 placeholder="Ej: Sahumerio"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            {/* CAMBIO: Color de texto del label */}
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                                 Imagen del Producto
                             </label>
 
@@ -143,7 +148,8 @@ export default function ProductForm({ onSubmit, onCancel, editProduct }: Product
                                     <img
                                         src={imagePreview}
                                         alt="Preview"
-                                        className="w-full h-48 object-cover rounded-lg border-2 border-gray-300"
+                                        // CAMBIO: Borde del preview
+                                        className="w-full h-48 object-cover rounded-lg border-2 border-gray-300 dark:border-gray-600"
                                     />
                                 </div>
                             )}
@@ -153,16 +159,19 @@ export default function ProductForm({ onSubmit, onCancel, editProduct }: Product
                                 accept="image/*"
                                 onChange={handleImageChange}
                                 disabled={isSubmitting}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
+                                // CAMBIO: Estilos dark: para el input de archivo (incluyendo el botón interno 'file:')
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:file:bg-blue-900 dark:file:text-blue-300 dark:hover:file:bg-blue-800"
                             />
-                            <p className="text-xs text-gray-500 mt-1">
+                            {/* CAMBIO: Texto de ayuda */}
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                 Selecciona una imagen desde tu computadora (JPG, PNG, etc.)
                             </p>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                {/* CAMBIO: Color de texto del label */}
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                                     Precio Compra
                                 </label>
                                 <input
@@ -173,13 +182,15 @@ export default function ProductForm({ onSubmit, onCancel, editProduct }: Product
                                     onChange={(e) => setFormData({ ...formData, purchase_price: parseFloat(e.target.value) || 0 })}
                                     required
                                     disabled={isSubmitting}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:opacity-50"
+                                    // CAMBIO: Estilos dark: para el input
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     placeholder="0.00"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                {/* CAMBIO: Color de texto del label */}
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                                     Precio Venta
                                 </label>
                                 <input
@@ -190,15 +201,17 @@ export default function ProductForm({ onSubmit, onCancel, editProduct }: Product
                                     onChange={(e) => setFormData({ ...formData, sale_price: parseFloat(e.target.value) || 0 })}
                                     required
                                     disabled={isSubmitting}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:opacity-50"
+                                    // CAMBIO: Estilos dark: para el input
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     placeholder="0.00"
                                 />
                             </div>
                         </div>
 
                         {!editProduct && (
-                            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                <p className="text-sm text-yellow-800">
+                            // CAMBIO: Mensaje de "stock inicial"
+                            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg dark:bg-yellow-900 dark:border-yellow-700">
+                                <p className="text-sm text-yellow-800 dark:text-yellow-200">
                                     ℹ️ El stock inicial será 0. Podrás ajustarlo desde la sección de Stock.
                                 </p>
                             </div>
@@ -206,8 +219,9 @@ export default function ProductForm({ onSubmit, onCancel, editProduct }: Product
 
                         {/* --- Bloque para mostrar el error --- */}
                         {formError && (
-                            <div className="p-3 bg-red-50 border border-red-300 rounded-lg">
-                                <p className="text-sm text-red-800 font-medium">{formError}</p>
+                            // CAMBIO: Mensaje de error
+                            <div className="p-3 bg-red-50 border border-red-300 rounded-lg dark:bg-red-900 dark:border-red-700">
+                                <p className="text-sm text-red-800 dark:text-red-200 font-medium">{formError}</p>
                             </div>
                         )}
                         {/* --- Fin del bloque de error --- */}
@@ -218,7 +232,8 @@ export default function ProductForm({ onSubmit, onCancel, editProduct }: Product
                                 type="button"
                                 onClick={onCancel}
                                 disabled={isSubmitting}
-                                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
+                                // CAMBIO: Botón "Cancelar"
+                                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
                             >
                                 Cancelar
                             </button>

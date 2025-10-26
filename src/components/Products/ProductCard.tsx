@@ -10,8 +10,10 @@ interface ProductCardProps {
 
 function ProductCard({ product, onEdit, onDelete }: ProductCardProps) {
     return (
-        <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300 flex flex-col">
-            <div className="h-48 bg-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+        // CAMBIO: Fondo de la tarjeta
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300 flex flex-col">
+            {/* CAMBIO: Fondo del placeholder de imagen */}
+            <div className="h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden flex-shrink-0">
                 <OptimizedImage
                     src={product.image_url}
                     alt={product.name}
@@ -20,22 +22,27 @@ function ProductCard({ product, onEdit, onDelete }: ProductCardProps) {
             </div>
 
             <div className="p-4 flex flex-col flex-1">
-                <h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2 min-h-[3.5rem]">
+                {/* CAMBIO: Color de texto del título */}
+                <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2 line-clamp-2 min-h-[3.5rem]">
                     {product.name}
                 </h3>
 
                 <div className="space-y-2 mb-4 flex-1">
                     <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Precio Compra:</span>
-                        <span className="font-semibold text-blue-600">${product.purchase_price.toFixed(2)}</span>
+                        {/* CAMBIO: Color de texto de la etiqueta */}
+                        <span className="text-gray-600 dark:text-gray-300">Precio Compra:</span>
+                        <span className="font-semibold text-blue-600 dark:text-blue-400">${product.purchase_price.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Precio Venta:</span>
-                        <span className="font-semibold text-green-600">${product.sale_price.toFixed(2)}</span>
+                        {/* CAMBIO: Color de texto de la etiqueta */}
+                        <span className="text-gray-600 dark:text-gray-300">Precio Venta:</span>
+                        <span className="font-semibold text-green-600 dark:text-green-400">${product.sale_price.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Stock:</span>
-                        <span className={`font-semibold ${product.stock < 10 ? 'text-red-600' : 'text-gray-800'}`}>
+                        {/* CAMBIO: Color de texto de la etiqueta */}
+                        <span className="text-gray-600 dark:text-gray-300">Stock:</span>
+                        {/* CAMBIO: Color de texto del stock */}
+                        <span className={`font-semibold ${product.stock < 5 ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-white'}`}>
                             {product.stock} unidades
                         </span>
                     </div>

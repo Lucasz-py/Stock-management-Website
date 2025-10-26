@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
+import { SettingsProvider } from './contexts/SettingsContext';
 import Login from './components/Auth/Login';
 import Sidebar from './components/Layout/Sidebar';
+import SettingsButton from './components/Settings/SettingsButton';
 import ProductList from './components/Products/ProductList';
 import StockManagement from './components/Stock/StockManagement';
 import SalesView from './components/Sales/SalesView';
 import RecordsView from './components/Records/RecordsView';
 
-function App() {
+function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeView, setActiveView] = useState('sales');
   const [loading, setLoading] = useState(true);
@@ -51,11 +53,21 @@ function App() {
         onLogout={handleLogout}
       />
 
+      <SettingsButton />
+
       {activeView === 'sales' && <SalesView />}
       {activeView === 'stock' && <StockManagement />}
       {activeView === 'products' && <ProductList />}
       {activeView === 'records' && <RecordsView />}
     </div>
+  );
+}
+
+function App() {
+  return (
+    <SettingsProvider>
+      <AppContent />
+    </SettingsProvider>
   );
 }
 
