@@ -91,7 +91,7 @@ export default function StockManagement() {
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 transition-colors">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Stock Bajo (1-9)</p>
+                            <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Stock Bajo</p>
                             <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">{lowStockCount}</p>
                         </div>
                         <div className="text-5xl">⚠️</div>
