@@ -46,8 +46,8 @@ export default function StockManagement() {
         )
         .filter((product) => { // 2. Filtro por estado de stock
             if (stockFilter === 'low') {
-                // Stock bajo (entre 1 y 9)
-                return product.stock > 0 && product.stock < 10;
+                // Stock bajo (entre 1 y 4)
+                return product.stock > 0 && product.stock < 5;
             }
             if (stockFilter === 'none') {
                 // Sin stock
@@ -57,7 +57,7 @@ export default function StockManagement() {
             return true;
         });
 
-    const lowStockCount = products.filter((p) => p.stock > 0 && p.stock < 10).length; // Ajustado para no incluir 'sin stock'
+    const lowStockCount = products.filter((p) => p.stock > 0 && p.stock < 5).length; // Ajustado para no incluir 'sin stock'
     const outOfStockCount = products.filter((p) => p.stock === 0).length;
 
     const totalPurchaseValue = products.reduce((sum, p) => sum + (p.stock * p.purchase_price), 0);
