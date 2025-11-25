@@ -1,14 +1,20 @@
 import { useState, useEffect } from 'react';
+import type { Dispatch, SetStateAction } from 'react'; 
 import { type Product } from '../../types';
 import { getProducts, addSale, updateProduct } from '../../lib/supabase';
 import MainLayout from '../Layout/MainLayout';
+import PageHeader from '../Layout/PageHeader'; 
 
 interface CartItem {
     product: Product;
     quantity: number;
 }
 
-export default function SalesView() {
+interface SalesViewProps {
+    setShowSettingsMenu: Dispatch<SetStateAction<boolean>>;
+}
+
+export default function SalesView({ setShowSettingsMenu }: SalesViewProps) {
     const [products, setProducts] = useState<Product[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [cart, setCart] = useState<CartItem[]>([]);
@@ -133,7 +139,7 @@ export default function SalesView() {
 
     if (loading) {
         return (
-            <MainLayout title="Ventas">
+            <MainLayout>
                 <div className="flex items-center justify-center h-64">
                     <div className="text-gray-500 dark:text-gray-400">Cargando productos...</div>
                 </div>
@@ -142,7 +148,14 @@ export default function SalesView() {
     }
 
     return (
-        <MainLayout title="Ventas">
+        <MainLayout>
+            {/* NUEVO: Page Header con el botón de Configuración */}
+            <PageHeader
+                title="Ventas"
+                showSettingsMenu={false}
+                setShowSettingsMenu={setShowSettingsMenu}
+            />
+
             {successMessage && (
                 <div className={`mb-6 p-4 rounded-lg shadow-lg animate-slide-down ${successMessage.includes('❌') || successMessage.includes('⚠️')
                     ? 'bg-red-50 dark:bg-red-900 border-2 border-red-500 text-red-800 dark:text-red-200'
@@ -191,17 +204,16 @@ export default function SalesView() {
                             </div>
                         ) : (
                             <div>
-                                {searchTerm === '' && (
-                                    <div className="p-4 bg-blue-50 dark:bg-blue-900 border-b border-blue-100 dark:border-blue-800">
-                                        <p className="text-sm text-blue-800 dark:text-blue-200 font-medium">
-                                            📋 Todos los productos ({products.length})
-                                        </p>
-                                        <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
-                                            Haz clic en un producto para agregarlo al carrito
-                                        </p>
-                                    </div>
-                                )}
-
+                                {/* CAMBIO CLAVE: Usamos bg-blue-200 para el modo claro y texto oscuro */}
+                                <div className="p-4 bg-blue-200 dark:bg-blue-900 border-b border-blue-300 dark:border-blue-800">
+                                    <p className="text-sm text-blue-900 dark:text-blue-200 font-medium">
+                                        📋 Todos los productos ({products.length})
+                                    </p>
+                                    <p className="text-xs text-blue-800 dark:text-blue-300 mt-1">
+                                        Haz clic en un producto para agregarlo al carrito
+                                    </p>
+                                </div>
+                                
                                 <div className="divide-y divide-gray-200 dark:divide-gray-700">
                                     {filteredProducts.map((product) => {
                                         const inCart = cart.find(item => item.product.id === product.id);
@@ -210,7 +222,8 @@ export default function SalesView() {
                                                 key={product.id}
                                                 onClick={() => addToCart(product)}
                                                 disabled={product.stock === 0}
-                                                className={`w-full p-4 flex items-center space-x-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition ${inCart ? 'bg-green-50 dark:bg-green-900 border-l-4 border-green-600' : ''} ${product.stock === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                // Clase de selección de producto (corregida previamente)
+                                                className={`w-full p-4 flex items-center space-x-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition ${inCart ? 'bg-green-100 dark:bg-green-900 ring-4 ring-inset ring-green-400 shadow-lg' : ''} ${product.stock === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                                             >
                                                 <img
                                                     src={product.image_url}
@@ -249,7 +262,8 @@ export default function SalesView() {
                 {/* Carrito de Compras */}
                 <div>
                     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden sticky top-8">
-                        <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-6 text-white">
+                        {/* Gradiente personalizado */}
+                        <div className="bg-gradient-to-r from-abrazo-dark via-abrazo-mid to-abrazo-dark p-6 text-white">
                             <h2 className="text-2xl font-bold mb-2">Carrito de Venta</h2>
                             <p className="text-purple-100">
                                 {cart.length === 0 ? 'Agrega productos al carrito' : `${cartItemsCount} producto(s) en el carrito`}

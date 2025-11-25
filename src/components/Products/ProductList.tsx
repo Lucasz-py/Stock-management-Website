@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import { type Product } from '../../types';
 import {
     getProducts,
@@ -10,8 +11,15 @@ import {
 import ProductCard from './ProductCard';
 import ProductForm from './ProductForm';
 import MainLayout from '../Layout/MainLayout';
+import PageHeader from '../Layout/PageHeader'; // IMPORTADO
 
-export default function ProductList() {
+// NUEVO: Interface para las props
+interface ProductListProps {
+    setShowSettingsMenu: Dispatch<SetStateAction<boolean>>;
+}
+
+// CAMBIO: Recibe la prop
+export default function ProductList({ setShowSettingsMenu }: ProductListProps) {
     const [products, setProducts] = useState<Product[]>([]);
     const [showForm, setShowForm] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -132,9 +140,9 @@ export default function ProductList() {
 
     if (loading) {
         return (
-            <MainLayout title="Productos">
+            // CORREGIDO: Se elimina title=""
+            <MainLayout>
                 <div className="flex items-center justify-center h-64">
-                    {/* CAMBIO: Texto de carga oscuro */}
                     <div className="text-gray-500 dark:text-gray-400">Cargando productos...</div>
                 </div>
             </MainLayout>
@@ -142,10 +150,17 @@ export default function ProductList() {
     }
 
     return (
-        <MainLayout title="Productos">
+        // CORREGIDO: Se elimina title=""
+        <MainLayout>
+            {/* NUEVO: Page Header con el botón de Configuración */}
+            <PageHeader
+                title="Productos"
+                showSettingsMenu={false}
+                setShowSettingsMenu={setShowSettingsMenu}
+            />
+
             {/* Mensaje de éxito/error */}
             {successMessage && (
-                // CAMBIO: Estilos dark: para el mensaje
                 <div className={`mb-6 p-4 rounded-lg shadow-lg animate-slide-down ${successMessage.includes('❌')
                     ? 'bg-red-50 border-2 border-red-500 text-red-800 dark:bg-red-900 dark:border-red-700 dark:text-red-200'
                     : 'bg-green-50 border-2 border-green-500 text-green-800 dark:bg-green-900 dark:border-green-700 dark:text-green-200'
@@ -164,7 +179,6 @@ export default function ProductList() {
             </div>
 
             {products.length === 0 ? (
-                // CAMBIO: Estilos dark: para el estado vacío
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-12 text-center">
                     <div className="text-6xl mb-4">📦</div>
                     <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">
@@ -198,7 +212,6 @@ export default function ProductList() {
             {/* Modal de confirmación de eliminación */}
             {showDeleteConfirm && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    {/* CAMBIO: Estilos dark: para el modal de borrado */}
                     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-md">
                         <div className="text-center mb-6">
                             <div className="text-6xl mb-4">⚠️</div>

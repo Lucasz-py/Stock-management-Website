@@ -1,17 +1,23 @@
 import { useState, useEffect } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import { type Sale } from '../../types';
 import { getSales } from '../../lib/supabase';
 import RecordItem from './RecordItem';
 import MainLayout from '../Layout/MainLayout';
-// CAMBIO 1: Importar useSettings
 import { useSettings } from '../../contexts/SettingsContext';
+import PageHeader from '../Layout/PageHeader'; // IMPORTADO
 
-export default function RecordsView() {
+// NUEVO: Interface para las props
+interface RecordsViewProps {
+    setShowSettingsMenu: Dispatch<SetStateAction<boolean>>;
+}
+
+// CAMBIO: Recibe la prop
+export default function RecordsView({ setShowSettingsMenu }: RecordsViewProps) {
     const [sales, setSales] = useState<Sale[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
 
-    // CAMBIO 2: Obtener el estado del contexto
     const { showTotalRevenue } = useSettings();
 
     useEffect(() => {
@@ -29,19 +35,22 @@ export default function RecordsView() {
         }
     };
 
+    // FUNCIÓN CORREGIDA: Se asegura de que los filtros de tiempo comparen correctamente.
     const getFilteredSales = () => {
         const now = new Date();
+        // Aseguramos que la comparación sea con la fecha de inicio del día
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
         switch (filter) {
             case 'today':
-                return sales.filter((sale) => new Date(sale.created_at) >= today);
+                // Se utiliza getTime() para comparación numérica
+                return sales.filter((sale) => new Date(sale.created_at).getTime() >= today.getTime());
             case 'week':
                 const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-                return sales.filter((sale) => new Date(sale.created_at) >= weekAgo);
+                return sales.filter((sale) => new Date(sale.created_at).getTime() >= weekAgo.getTime());
             case 'month':
                 const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-                return sales.filter((sale) => new Date(sale.created_at) >= monthAgo);
+                return sales.filter((sale) => new Date(sale.created_at).getTime() >= monthAgo.getTime());
             default:
                 return sales;
         }
@@ -54,7 +63,8 @@ export default function RecordsView() {
 
     if (loading) {
         return (
-            <MainLayout title="Registros de Ventas">
+            // CORREGIDO: Se elimina title=""
+            <MainLayout>
                 <div className="flex items-center justify-center h-64">
                     <div className="text-gray-500 dark:text-gray-400">Cargando registros...</div>
                 </div>
@@ -63,7 +73,15 @@ export default function RecordsView() {
     }
 
     return (
-        <MainLayout title="Registros de Ventas">
+        // CORREGIDO: Se elimina title=""
+        <MainLayout>
+            {/* NUEVO: Page Header con el botón de Configuración */}
+            <PageHeader
+                title="Registros de Ventas"
+                showSettingsMenu={false}
+                setShowSettingsMenu={setShowSettingsMenu}
+            />
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 {/* Card 1: Total Ventas */}
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
@@ -92,7 +110,6 @@ export default function RecordsView() {
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-gray-600 dark:text-gray-300 text-sm mb-1">Ingresos Totales</p>
-                            {/* CAMBIO 3: Lógica condicional para mostrar el valor o *** */}
                             <p className="text-3xl font-bold text-green-600 dark:text-green-400">
                                 {showTotalRevenue ? `$${totalRevenue.toFixed(2)}` : '$***'}
                             </p>
@@ -104,8 +121,6 @@ export default function RecordsView() {
 
             {/* Contenedor principal de la tabla y filtros */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
-                {/* ... (resto del componente de filtros y tabla) ... */}
-                {/* (No hay cambios aquí) */}
                 <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                     <div className="flex flex-wrap items-center gap-3">
                         <span className="text-gray-700 dark:text-gray-200 font-medium">Filtrar por:</span>
@@ -160,7 +175,6 @@ export default function RecordsView() {
                         </p>
                     </div>
                 ) : (
-                    // Tabla de registros
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead className="bg-gray-50 dark:bg-gray-700">

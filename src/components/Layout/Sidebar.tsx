@@ -38,12 +38,11 @@ export default function Sidebar({ activeView, setActiveView, onLogout }: Sidebar
                         <li key={item.id}>
                             <button
                                 onClick={() => setActiveView(item.id)}
-                                // --- LÍNEA MODIFICADA ---
+                                // CAMBIO: Nuevo gradiente personalizado
                                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${activeView === item.id
-                                    ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white' // <-- ¡CAMBIO A GRADIENTE!
+                                    ? 'bg-gradient-to-r from-abrazo-dark via-abrazo-mid to-abrazo-dark text-white' 
                                     : 'text-gray-300 hover:bg-gray-800'
                                     }`}
-                            // --- FIN DE LÍNEA MODIFICADA ---
                             >
                                 <span className="text-2xl">{item.icon}</span>
                                 <span className="font-medium">{item.label}</span>

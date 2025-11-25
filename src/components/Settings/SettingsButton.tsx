@@ -1,30 +1,26 @@
-import { useState } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import { useSettings } from '../../contexts/SettingsContext';
 
-export default function SettingsButton() {
-    const [showMenu, setShowMenu] = useState(false);
+// El componente ahora acepta props para controlar su visibilidad
+interface SettingsPanelProps {
+    showMenu: boolean;
+    setShowMenu: Dispatch<SetStateAction<boolean>>;
+}
+
+export default function SettingsPanel({ showMenu, setShowMenu }: SettingsPanelProps) { 
     const {
         darkMode,
         showInventoryValue,
         showProfitValue,
-        showTotalRevenue, // NUEVO
+        showTotalRevenue,
         toggleDarkMode,
         toggleInventoryValue,
         toggleShowProfitValue,
-        toggleShowTotalRevenue // NUEVO
+        toggleShowTotalRevenue
     } = useSettings();
 
     return (
         <>
-            {/* Botón flotante */}
-            <button
-                onClick={() => setShowMenu(!showMenu)}
-                className="fixed top-6 right-6 z-40 bg-gradient-to-r from-purple-500 to-blue-500 text-white p-2 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110"
-                title="Configuración"
-            >
-                <span className="text-2xl">⚙️</span>
-            </button>
-
             {/* Panel de configuración */}
             {showMenu && (
                 <>
@@ -34,9 +30,9 @@ export default function SettingsButton() {
                         onClick={() => setShowMenu(false)}
                     />
 
-                    {/* Panel */}
-                    <div className="fixed top-20 right-6 z-50 bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-80 overflow-hidden animate-slide-down">
-                        <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-4 text-white">
+                    {/* AJUSTE DE POSICIÓN: top-12 (más arriba) y right-10 (más a la izquierda) */}
+                    <div className="fixed top-5 right-12 z-50 bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-80 overflow-hidden animate-slide-down">
+                        <div className="bg-gradient-to-r from-abrazo-dark via-abrazo-mid to-abrazo-dark p-4 text-white">
                             <h3 className="text-lg font-bold">Configuración</h3>
                             <p className="text-sm text-purple-100">Personaliza tu experiencia</p>
                         </div>

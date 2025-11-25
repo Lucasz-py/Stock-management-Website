@@ -1,15 +1,22 @@
 import { useState, useEffect } from 'react';
+import type { Dispatch, SetStateAction } from 'react'; // Importación de tipos
 import { type Product } from '../../types';
 import { getProducts, updateProduct } from '../../lib/supabase';
 import { useSettings } from '../../contexts/SettingsContext';
 import StockItem from './StockItem';
 import MainLayout from '../Layout/MainLayout';
+import PageHeader from '../Layout/PageHeader'; // Importado
 
-export default function StockManagement() {
+// NUEVO: Interface para las props
+interface StockManagementProps {
+    setShowSettingsMenu: Dispatch<SetStateAction<boolean>>;
+}
+
+// CAMBIO: Recibe la prop
+export default function StockManagement({ setShowSettingsMenu }: StockManagementProps) {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    // NUEVO: Estado para el filtro de stock
     const [stockFilter, setStockFilter] = useState<'all' | 'low' | 'none'>('all');
 
     const { showInventoryValue, showProfitValue } = useSettings();
@@ -39,7 +46,6 @@ export default function StockManagement() {
         }
     };
 
-    // MODIFICADO: Lógica de filtrado
     const filteredProducts = products
         .filter((product) => // 1. Filtro por búsqueda de texto
             product.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -57,7 +63,7 @@ export default function StockManagement() {
             return true;
         });
 
-    const lowStockCount = products.filter((p) => p.stock > 0 && p.stock < 5).length; // Ajustado para no incluir 'sin stock'
+    const lowStockCount = products.filter((p) => p.stock > 0 && p.stock < 5).length;
     const outOfStockCount = products.filter((p) => p.stock === 0).length;
 
     const totalPurchaseValue = products.reduce((sum, p) => sum + (p.stock * p.purchase_price), 0);
@@ -67,7 +73,8 @@ export default function StockManagement() {
 
     if (loading) {
         return (
-            <MainLayout title="Gestión de Stock">
+            // CORREGIDO: Se elimina title="Gestión de Stock"
+            <MainLayout>
                 <div className="flex items-center justify-center h-64">
                     <div className="text-gray-500 dark:text-gray-400">Cargando stock...</div>
                 </div>
@@ -76,7 +83,15 @@ export default function StockManagement() {
     }
 
     return (
-        <MainLayout title="Gestión de Stock">
+        // CORREGIDO: Se elimina title="Gestión de Stock"
+        <MainLayout>
+            {/* NUEVO: Page Header con el botón de Configuración */}
+            <PageHeader
+                title="Gestión de Stock"
+                showSettingsMenu={false}
+                setShowSettingsMenu={setShowSettingsMenu}
+            />
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 transition-colors">
                     <div className="flex items-center justify-between">

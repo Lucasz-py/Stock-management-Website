@@ -3,7 +3,8 @@ import { supabase } from './lib/supabase';
 import { SettingsProvider } from './contexts/SettingsContext';
 import Login from './components/Auth/Login';
 import Sidebar from './components/Layout/Sidebar';
-import SettingsButton from './components/Settings/SettingsButton';
+// ELIMINAMOS: import SettingsButton from './components/Settings/SettingsButton'; 
+import SettingsPanel from './components/Settings/SettingsButton'; // RENOMBRADO
 import ProductList from './components/Products/ProductList';
 import StockManagement from './components/Stock/StockManagement';
 import SalesView from './components/Sales/SalesView';
@@ -13,6 +14,9 @@ function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeView, setActiveView] = useState('sales');
   const [loading, setLoading] = useState(true);
+  
+  // NUEVO ESTADO: Para controlar la visibilidad del panel de configuración
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false); 
 
   useEffect(() => {
     checkAuth();
@@ -53,12 +57,14 @@ function AppContent() {
         onLogout={handleLogout}
       />
 
-      <SettingsButton />
+      {/* AÑADIMOS el panel de configuración globalmente */}
+      <SettingsPanel showMenu={showSettingsMenu} setShowMenu={setShowSettingsMenu} />
 
-      {activeView === 'sales' && <SalesView />}
-      {activeView === 'stock' && <StockManagement />}
-      {activeView === 'products' && <ProductList />}
-      {activeView === 'records' && <RecordsView />}
+      {/* Eliminamos 'title' de la prop si existía, ya que MainLayout ya no la usa. */}
+      {activeView === 'sales' && <SalesView setShowSettingsMenu={setShowSettingsMenu} />} 
+      {activeView === 'stock' && <StockManagement setShowSettingsMenu={setShowSettingsMenu} />}
+      {activeView === 'products' && <ProductList setShowSettingsMenu={setShowSettingsMenu} />}
+      {activeView === 'records' && <RecordsView setShowSettingsMenu={setShowSettingsMenu} />}
     </div>
   );
 }

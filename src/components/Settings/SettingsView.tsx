@@ -1,20 +1,38 @@
+import type { Dispatch, SetStateAction } from 'react'; // Importación de tipos
 import { useSettings } from '../../contexts/SettingsContext';
 import MainLayout from '../Layout/MainLayout';
+import PageHeader from '../Layout/PageHeader'; // Importado
 
-export default function SettingsView() {
+// NUEVA INTERFACE: Prop para recibir la función de configuración (aunque solo se usa para el PageHeader)
+interface SettingsViewProps {
+    setShowSettingsMenu: Dispatch<SetStateAction<boolean>>;
+}
+
+// CAMBIO: Recibe la prop
+export default function SettingsView({ setShowSettingsMenu }: SettingsViewProps) {
     const {
         darkMode,
         showInventoryValue,
         showProfitValue,
-        showTotalRevenue, // NUEVO
+        showTotalRevenue, 
         toggleDarkMode,
         toggleInventoryValue,
         toggleShowProfitValue,
-        toggleShowTotalRevenue // NUEVO
+        toggleShowTotalRevenue
     } = useSettings();
 
     return (
-        <MainLayout title="Configuración">
+        // CORREGIDO: Se elimina title="Configuración"
+        <MainLayout>
+            {/* NUEVO: Page Header con el título de la vista */}
+            <PageHeader
+                title="Configuración"
+                // En la vista de Configuración, podemos desactivar el botón 
+                // para que no abra el menú flotante sobre sí mismo.
+                showSettingsMenu={false} 
+                setShowSettingsMenu={setShowSettingsMenu}
+            />
+
             <div className="max-w-2xl">
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
                     <div className="p-6 border-b border-gray-200 dark:border-gray-700">
