@@ -1,13 +1,24 @@
 import { useState, useEffect } from 'react';
 import type { Dispatch, SetStateAction } from 'react'; 
-import { type Product } from '../../types';
-import { getProducts, addSale, updateProduct } from '../../lib/supabase';
+import { type Product, type ProductVariant } from '../../types';
+import { 
+    getProducts, 
+    addSale, 
+    updateVariant, 
+    updateParentProductStock, 
+    getVariantsByProductId,
+    updateProduct 
+} from '../../lib/supabase';
 import MainLayout from '../Layout/MainLayout';
 import PageHeader from '../Layout/PageHeader'; 
+import VariantSelector from './VariantSelector'; 
+import { Trash2 } from 'lucide-react'; // IMPORTADO
 
 interface CartItem {
     product: Product;
+    variant?: ProductVariant; 
     quantity: number;
+    displayName: string;
 }
 
 interface SalesViewProps {
@@ -20,6 +31,7 @@ export default function SalesView({ setShowSettingsMenu }: SalesViewProps) {
     const [cart, setCart] = useState<CartItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [successMessage, setSuccessMessage] = useState('');
+    const [selectedProductForVariant, setSelectedProductForVariant] = useState<Product | null>(null);
 
     useEffect(() => {
         loadProducts();
@@ -36,53 +48,106 @@ export default function SalesView({ setShowSettingsMenu }: SalesViewProps) {
         }
     };
 
-    const addToCart = (product: Product) => {
+    const handleProductClick = async (product: Product) => {
         if (product.stock === 0) {
             setSuccessMessage('⚠️ Este producto no tiene stock disponible');
             setTimeout(() => setSuccessMessage(''), 3000);
             return;
         }
 
-        const existingItem = cart.find(item => item.product.id === product.id);
-
-        if (existingItem) {
-            if (existingItem.quantity >= product.stock) {
-                setSuccessMessage('⚠️ No hay suficiente stock disponible');
-                setTimeout(() => setSuccessMessage(''), 3000);
-                return;
+        try {
+            const variants = await getVariantsByProductId(product.id);
+            if (variants && variants.length > 0) {
+                setSelectedProductForVariant(product);
+            } else {
+                addBaseProductToCart(product);
             }
-            setCart(cart.map(item =>
-                item.product.id === product.id
-                    ? { ...item, quantity: item.quantity + 1 }
-                    : item
-            ));
-        } else {
-            setCart([...cart, { product, quantity: 1 }]);
+        } catch (error) {
+            console.error("Error verificando variantes:", error);
+            addBaseProductToCart(product);
         }
     };
 
-    const removeFromCart = (productId: string) => {
-        setCart(cart.filter(item => item.product.id !== productId));
+    const addBaseProductToCart = (product: Product) => {
+        const existingItemIndex = cart.findIndex(item => 
+            item.product.id === product.id && !item.variant
+        );
+
+        if (existingItemIndex >= 0) {
+            const currentQty = cart[existingItemIndex].quantity;
+            if (currentQty >= product.stock) {
+                setSuccessMessage(`⚠️ Stock insuficiente para ${product.name}`);
+                setTimeout(() => setSuccessMessage(''), 3000);
+                return;
+            }
+            const newCart = [...cart];
+            newCart[existingItemIndex].quantity += 1;
+            setCart(newCart);
+        } else {
+            setCart([...cart, { 
+                product, 
+                variant: undefined,
+                quantity: 1,
+                displayName: product.name 
+            }]);
+        }
     };
 
-    const updateCartQuantity = (productId: string, quantity: number) => {
-        const item = cart.find(item => item.product.id === productId);
-        if (item && quantity > item.product.stock) {
+    const handleVariantSelect = (variant: ProductVariant) => {
+        if (!selectedProductForVariant) return;
+        addToCartWithVariant(selectedProductForVariant, variant);
+        setSelectedProductForVariant(null); 
+    };
+
+    const addToCartWithVariant = (product: Product, variant: ProductVariant) => {
+        const existingItemIndex = cart.findIndex(item => 
+            item.product.id === product.id && item.variant?.id === variant.id
+        );
+
+        if (existingItemIndex >= 0) {
+            const currentQty = cart[existingItemIndex].quantity;
+            if (currentQty >= variant.stock) {
+                setSuccessMessage(`⚠️ No hay suficiente stock de ${variant.name}`);
+                setTimeout(() => setSuccessMessage(''), 3000);
+                return;
+            }
+            const newCart = [...cart];
+            newCart[existingItemIndex].quantity += 1;
+            setCart(newCart);
+        } else {
+            setCart([...cart, { 
+                product, 
+                variant,
+                quantity: 1,
+                displayName: `${product.name} - ${variant.name}`
+            }]);
+        }
+    };
+
+    const removeFromCart = (index: number) => {
+        const newCart = [...cart];
+        newCart.splice(index, 1);
+        setCart(newCart);
+    };
+
+    const updateCartQuantity = (index: number, newQuantity: number) => {
+        const item = cart[index];
+        const maxStock = item.variant ? item.variant.stock : item.product.stock;
+
+        if (newQuantity > maxStock) {
             setSuccessMessage('⚠️ No hay suficiente stock disponible');
             setTimeout(() => setSuccessMessage(''), 3000);
             return;
         }
 
-        if (quantity <= 0) {
-            removeFromCart(productId);
+        if (newQuantity <= 0) {
+            removeFromCart(index);
             return;
         }
 
-        setCart(cart.map(item =>
-            item.product.id === productId
-                ? { ...item, quantity }
-                : item
-        ));
+        const newCart = [...cart];
+        newCart[index].quantity = newQuantity;
+        setCart(newCart);
     };
 
     const handleCompleteSale = async () => {
@@ -96,35 +161,32 @@ export default function SalesView({ setShowSettingsMenu }: SalesViewProps) {
             for (const item of cart) {
                 await addSale({
                     product_id: item.product.id,
-                    product_name: item.product.name,
+                    product_name: item.displayName,
                     quantity: item.quantity,
                     sale_price: item.product.sale_price,
                     total: item.product.sale_price * item.quantity,
                 });
 
-                const newStock = item.product.stock - item.quantity;
-                await updateProduct(item.product.id, { stock: newStock });
+                if (item.variant) {
+                    const newVariantStock = item.variant.stock - item.quantity;
+                    await updateVariant(item.variant.id, { stock: newVariantStock });
+                    await updateParentProductStock(item.product.id);
+                } else {
+                    const newStock = item.product.stock - item.quantity;
+                    await updateProduct(item.product.id, { stock: newStock });
+                }
             }
 
-            await loadProducts();
-
-            const total = cart.reduce((sum, item) => sum + (item.product.sale_price * item.quantity), 0);
-            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-
-            setSuccessMessage(`✅ ¡Venta registrada exitosamente! ${totalItems} producto(s) - Total: $${total.toFixed(2)}`);
-
+            await loadProducts(); 
             setCart([]);
             setSearchTerm('');
+            setSuccessMessage(`✅ ¡Venta registrada exitosamente!`);
+            setTimeout(() => setSuccessMessage(''), 5000);
 
-            setTimeout(() => {
-                setSuccessMessage('');
-            }, 5000);
         } catch (error) {
             console.error('Error registrando venta:', error);
             setSuccessMessage('❌ Error al registrar la venta');
-            setTimeout(() => {
-                setSuccessMessage('');
-            }, 5000);
+            setTimeout(() => setSuccessMessage(''), 5000);
         }
     };
 
@@ -149,7 +211,6 @@ export default function SalesView({ setShowSettingsMenu }: SalesViewProps) {
 
     return (
         <MainLayout>
-            {/* NUEVO: Page Header con el botón de Configuración */}
             <PageHeader
                 title="Ventas"
                 showSettingsMenu={false}
@@ -181,16 +242,13 @@ export default function SalesView({ setShowSettingsMenu }: SalesViewProps) {
                         />
                     </div>
 
-                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden max-h-[600px] overflow-y-auto">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden max-h-[600px] overflow-y-auto custom-scrollbar">
                         {products.length === 0 ? (
                             <div className="p-12 text-center">
                                 <div className="text-6xl mb-4">📦</div>
                                 <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
                                     No hay productos disponibles
                                 </h3>
-                                <p className="text-gray-500 dark:text-gray-400">
-                                    Agrega productos desde la sección de Productos
-                                </p>
                             </div>
                         ) : filteredProducts.length === 0 ? (
                             <div className="p-12 text-center">
@@ -198,13 +256,9 @@ export default function SalesView({ setShowSettingsMenu }: SalesViewProps) {
                                 <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
                                     No se encontró el producto
                                 </h3>
-                                <p className="text-gray-500 dark:text-gray-400">
-                                    Intenta con otro nombre
-                                </p>
                             </div>
                         ) : (
                             <div>
-                                {/* CAMBIO CLAVE: Usamos bg-blue-200 para el modo claro y texto oscuro */}
                                 <div className="p-4 bg-blue-200 dark:bg-blue-900 border-b border-blue-300 dark:border-blue-800">
                                     <p className="text-sm text-blue-900 dark:text-blue-200 font-medium">
                                         📋 Todos los productos ({products.length})
@@ -216,22 +270,22 @@ export default function SalesView({ setShowSettingsMenu }: SalesViewProps) {
                                 
                                 <div className="divide-y divide-gray-200 dark:divide-gray-700">
                                     {filteredProducts.map((product) => {
-                                        const inCart = cart.find(item => item.product.id === product.id);
+                                        const quantityInCart = cart
+                                            .filter(item => item.product.id === product.id)
+                                            .reduce((sum, item) => sum + item.quantity, 0);
+                                            
                                         return (
                                             <button
                                                 key={product.id}
-                                                onClick={() => addToCart(product)}
+                                                onClick={() => handleProductClick(product)}
                                                 disabled={product.stock === 0}
-                                                // Clase de selección de producto (corregida previamente)
-                                                className={`w-full p-4 flex items-center space-x-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition ${inCart ? 'bg-green-100 dark:bg-green-900 ring-4 ring-inset ring-green-400 shadow-lg' : ''} ${product.stock === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                className={`w-full p-4 flex items-center space-x-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition ${quantityInCart > 0 ? 'bg-green-100 dark:bg-green-900 ring-4 ring-inset ring-green-400 shadow-lg' : ''} ${product.stock === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                                             >
                                                 <img
                                                     src={product.image_url}
                                                     alt={product.name}
                                                     className="w-16 h-16 rounded-lg object-cover"
-                                                    onError={(e) => {
-                                                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/64?text=?';
-                                                    }}
+                                                    onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/64?text=?'; }}
                                                 />
                                                 <div className="flex-1 text-left">
                                                     <h3 className="font-semibold text-gray-800 dark:text-white">{product.name}</h3>
@@ -239,13 +293,13 @@ export default function SalesView({ setShowSettingsMenu }: SalesViewProps) {
                                                         Precio: ${product.sale_price.toFixed(2)}
                                                     </p>
                                                     <p className={`text-sm font-medium ${product.stock < 5 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
-                                                        Stock: {product.stock} unidades
+                                                        Stock Total: {product.stock}
                                                     </p>
                                                 </div>
-                                                {inCart && (
+                                                {quantityInCart > 0 && (
                                                     <div className="flex items-center space-x-2">
                                                         <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-bold">
-                                                            {inCart.quantity}
+                                                            {quantityInCart}
                                                         </span>
                                                         <div className="text-green-600 text-xl">🛒</div>
                                                     </div>
@@ -262,7 +316,6 @@ export default function SalesView({ setShowSettingsMenu }: SalesViewProps) {
                 {/* Carrito de Compras */}
                 <div>
                     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden sticky top-8">
-                        {/* Gradiente personalizado */}
                         <div className="bg-gradient-to-r from-abrazo-dark via-abrazo-mid to-abrazo-dark p-6 text-white">
                             <h2 className="text-2xl font-bold mb-2">Carrito de Venta</h2>
                             <p className="text-purple-100">
@@ -282,34 +335,33 @@ export default function SalesView({ setShowSettingsMenu }: SalesViewProps) {
                             </div>
                         ) : (
                             <div>
-                                <div className="max-h-[400px] overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700">
-                                    {cart.map((item) => (
-                                        <div key={item.product.id} className="p-4">
+                                <div className="max-h-[400px] overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700 custom-scrollbar">
+                                    {cart.map((item, index) => (
+                                        <div key={`${item.product.id}-${item.variant?.id || 'base'}-${index}`} className="p-4">
                                             <div className="flex items-start space-x-3 mb-3">
                                                 <img
                                                     src={item.product.image_url}
                                                     alt={item.product.name}
                                                     className="w-16 h-16 rounded-lg object-cover"
-                                                    onError={(e) => {
-                                                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/64?text=?';
-                                                    }}
                                                 />
                                                 <div className="flex-1">
-                                                    <h4 className="font-semibold text-gray-800 dark:text-white">{item.product.name}</h4>
+                                                    <h4 className="font-semibold text-gray-800 dark:text-white">{item.displayName}</h4>
                                                     <p className="text-sm text-gray-600 dark:text-gray-400">${item.product.sale_price.toFixed(2)} c/u</p>
                                                 </div>
                                                 <button
-                                                    onClick={() => removeFromCart(item.product.id)}
-                                                    className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-xl"
+                                                    onClick={() => removeFromCart(index)}
+                                                    className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-2 rounded-lg transition"
+                                                    title="Eliminar del carrito"
                                                 >
-                                                    🗑️
+                                                    {/* CAMBIO: Icono Trash2 */}
+                                                    <Trash2 className="w-5 h-5" />
                                                 </button>
                                             </div>
 
                                             <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 rounded-lg p-2">
                                                 <div className="flex items-center space-x-2">
                                                     <button
-                                                        onClick={() => updateCartQuantity(item.product.id, item.quantity - 1)}
+                                                        onClick={() => updateCartQuantity(index, item.quantity - 1)}
                                                         className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold"
                                                     >
                                                         -
@@ -317,13 +369,13 @@ export default function SalesView({ setShowSettingsMenu }: SalesViewProps) {
                                                     <input
                                                         type="number"
                                                         min="1"
-                                                        max={item.product.stock}
                                                         value={item.quantity}
-                                                        onChange={(e) => updateCartQuantity(item.product.id, parseInt(e.target.value) || 1)}
-                                                        className="w-16 text-center border border-gray-300 dark:border-gray-600 rounded-lg py-1 font-semibold bg-white dark:bg-gray-800 text-gray-800 dark:text-white"
+                                                        onChange={(e) => updateCartQuantity(index, parseInt(e.target.value) || 1)}
+                                                        // CAMBIO: Clases para ocultar flechas
+                                                        className="w-16 text-center border border-gray-300 dark:border-gray-600 rounded-lg py-1 font-semibold bg-white dark:bg-gray-800 text-gray-800 dark:text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                     />
                                                     <button
-                                                        onClick={() => updateCartQuantity(item.product.id, item.quantity + 1)}
+                                                        onClick={() => updateCartQuantity(index, item.quantity + 1)}
                                                         className="w-8 h-8 bg-green-500 hover:bg-green-600 text-white rounded-lg font-bold"
                                                     >
                                                         +
@@ -359,6 +411,15 @@ export default function SalesView({ setShowSettingsMenu }: SalesViewProps) {
                     </div>
                 </div>
             </div>
+
+            {selectedProductForVariant && (
+                <VariantSelector 
+                    product={selectedProductForVariant}
+                    onClose={() => setSelectedProductForVariant(null)}
+                    onSelectVariant={handleVariantSelect}
+                />
+            )}
+
         </MainLayout>
     );
 }

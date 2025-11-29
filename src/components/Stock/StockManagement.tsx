@@ -1,18 +1,16 @@
 import { useState, useEffect } from 'react';
-import type { Dispatch, SetStateAction } from 'react'; // Importación de tipos
+import type { Dispatch, SetStateAction } from 'react';
 import { type Product } from '../../types';
-import { getProducts, updateProduct } from '../../lib/supabase';
+import { getProducts } from '../../lib/supabase'; // updateProduct ya no se usa directamente aquí
 import { useSettings } from '../../contexts/SettingsContext';
 import StockItem from './StockItem';
 import MainLayout from '../Layout/MainLayout';
-import PageHeader from '../Layout/PageHeader'; // Importado
+import PageHeader from '../Layout/PageHeader'; 
 
-// NUEVO: Interface para las props
 interface StockManagementProps {
     setShowSettingsMenu: Dispatch<SetStateAction<boolean>>;
 }
 
-// CAMBIO: Recibe la prop
 export default function StockManagement({ setShowSettingsMenu }: StockManagementProps) {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
@@ -36,30 +34,22 @@ export default function StockManagement({ setShowSettingsMenu }: StockManagement
         }
     };
 
-    const handleUpdateStock = async (id: string, newStock: number) => {
-        try {
-            await updateProduct(id, { stock: newStock });
-            await loadProducts();
-        } catch (error) {
-            console.error('Error actualizando stock:', error);
-            alert('Error al actualizar el stock');
-        }
+    // Esta función se pasa a los hijos para que soliciten una recarga
+    const handleStockUpdated = () => {
+        loadProducts();
     };
 
     const filteredProducts = products
-        .filter((product) => // 1. Filtro por búsqueda de texto
+        .filter((product) => 
             product.name.toLowerCase().includes(searchTerm.toLowerCase())
         )
-        .filter((product) => { // 2. Filtro por estado de stock
+        .filter((product) => { 
             if (stockFilter === 'low') {
-                // Stock bajo (entre 1 y 4)
                 return product.stock > 0 && product.stock < 5;
             }
             if (stockFilter === 'none') {
-                // Sin stock
                 return product.stock === 0;
             }
-            // 'all' (default)
             return true;
         });
 
@@ -73,7 +63,6 @@ export default function StockManagement({ setShowSettingsMenu }: StockManagement
 
     if (loading) {
         return (
-            // CORREGIDO: Se elimina title="Gestión de Stock"
             <MainLayout>
                 <div className="flex items-center justify-center h-64">
                     <div className="text-gray-500 dark:text-gray-400">Cargando stock...</div>
@@ -83,9 +72,7 @@ export default function StockManagement({ setShowSettingsMenu }: StockManagement
     }
 
     return (
-        // CORREGIDO: Se elimina title="Gestión de Stock"
         <MainLayout>
-            {/* NUEVO: Page Header con el botón de Configuración */}
             <PageHeader
                 title="Gestión de Stock"
                 showSettingsMenu={false}
@@ -177,7 +164,7 @@ export default function StockManagement({ setShowSettingsMenu }: StockManagement
                         className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                     />
 
-                    {/* NUEVO: Botones de filtro */}
+                    {/* Botones de filtro */}
                     <div className="flex flex-wrap items-center gap-3 mt-4">
                         <span className="text-gray-700 dark:text-gray-200 font-medium">Filtrar por:</span>
                         <button
@@ -192,7 +179,7 @@ export default function StockManagement({ setShowSettingsMenu }: StockManagement
                         <button
                             onClick={() => setStockFilter('low')}
                             className={`px-4 py-2 rounded-lg font-medium transition text-sm ${stockFilter === 'low'
-                                ? 'bg-yellow-500 text-white' // Color temático
+                                ? 'bg-yellow-500 text-white' 
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
                                 }`}
                         >
@@ -201,7 +188,7 @@ export default function StockManagement({ setShowSettingsMenu }: StockManagement
                         <button
                             onClick={() => setStockFilter('none')}
                             className={`px-4 py-2 rounded-lg font-medium transition text-sm ${stockFilter === 'none'
-                                ? 'bg-red-500 text-white' // Color temático
+                                ? 'bg-red-500 text-white'
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
                                 }`}
                         >
@@ -244,7 +231,8 @@ export default function StockManagement({ setShowSettingsMenu }: StockManagement
                                     <StockItem
                                         key={product.id}
                                         product={product}
-                                        onUpdateStock={handleUpdateStock}
+                                        // CAMBIO: Ahora pasa handleStockUpdated que no requiere argumentos
+                                        onStockUpdated={handleStockUpdated}
                                     />
                                 ))}
                             </tbody>

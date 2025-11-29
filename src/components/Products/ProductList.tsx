@@ -1,3 +1,5 @@
+// Archivo: src/components/Products/ProductList.tsx
+
 import { useState, useEffect, useCallback } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { type Product } from '../../types';
@@ -11,14 +13,13 @@ import {
 import ProductCard from './ProductCard';
 import ProductForm from './ProductForm';
 import MainLayout from '../Layout/MainLayout';
-import PageHeader from '../Layout/PageHeader'; // IMPORTADO
+import PageHeader from '../Layout/PageHeader'; 
+import VariantManager from '../Variants/VariantManager'; 
 
-// NUEVO: Interface para las props
 interface ProductListProps {
     setShowSettingsMenu: Dispatch<SetStateAction<boolean>>;
 }
 
-// CAMBIO: Recibe la prop
 export default function ProductList({ setShowSettingsMenu }: ProductListProps) {
     const [products, setProducts] = useState<Product[]>([]);
     const [showForm, setShowForm] = useState(false);
@@ -27,6 +28,7 @@ export default function ProductList({ setShowSettingsMenu }: ProductListProps) {
     const [successMessage, setSuccessMessage] = useState('');
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [productToDelete, setProductToDelete] = useState<string | null>(null);
+    const [managingVariants, setManagingVariants] = useState<Product | null>(null); 
 
     useEffect(() => {
         loadProducts();
@@ -43,85 +45,60 @@ export default function ProductList({ setShowSettingsMenu }: ProductListProps) {
         }
     };
 
-    const handleAddProduct = async (productData: Omit<Product, 'id' | 'created_at'>) => {
+    const handleAddProduct = async (productData: Omit<Product, 'id' | 'created_at' | 'stock'>) => {
         try {
+            const productDataForDb = {
+                ...productData,
+                stock: 0, 
+            };
+
             if (editingProduct) {
-                // Si la URL de la imagen cambió, elimina la antigua del storage
                 if (productData.image_url !== editingProduct.image_url) {
                     deleteProductImage(editingProduct.image_url).catch(err => {
                         console.error("Fallo al eliminar imagen antigua:", err);
                     });
                 }
-
-                await updateProduct(editingProduct.id, productData);
+                await updateProduct(editingProduct.id, productDataForDb);
                 setSuccessMessage('✅ Producto actualizado exitosamente');
             } else {
-                await addProduct(productData);
-                setSuccessMessage('✅ Producto creado exitosamente');
+                await addProduct(productDataForDb);
+                setSuccessMessage('✅ Producto creado. ¡Agrega variantes ahora!');
             }
-
             await loadProducts();
             setShowForm(false);
             setEditingProduct(null);
-
-            setTimeout(() => {
-                setSuccessMessage('');
-            }, 3000);
+            setTimeout(() => { setSuccessMessage(''); }, 3000);
         } catch (error) {
             console.error('Error guardando producto:', error);
-
-            // 1. Muestra el mensaje de error en el fondo
             setSuccessMessage('❌ Error al guardar el producto');
-            setTimeout(() => {
-                setSuccessMessage('');
-            }, 3000);
-
-            // 2. ¡Importante! Relanza el error para que el formulario lo atrape
+            setTimeout(() => { setSuccessMessage(''); }, 3000);
             throw error;
         }
     };
 
-    // Optimizamos las funciones con useCallback
-    const handleEdit = useCallback((product: Product) => {
-        setEditingProduct(product);
-        setShowForm(true);
-    }, []); // Array vacío = la función nunca cambia
-
     const handleDeleteClick = useCallback((id: string) => {
         setProductToDelete(id);
         setShowDeleteConfirm(true);
-    }, []); // Array vacío = la función nunca cambia
+    }, []); 
 
     const confirmDelete = async () => {
         if (!productToDelete) return;
 
         try {
-            // Buscamos el producto en el estado actual para obtener su URL
             const product = products.find(p => p.id === productToDelete);
-
-            // 1. Eliminar el producto de la base de datos
-            await deleteProduct(productToDelete);
-
-            // 2. Si se eliminó bien y tenía imagen, borrarla del storage
+            await deleteProduct(productToDelete); 
             if (product && product.image_url) {
-                // Llamamos sin 'await' para no bloquear la UI
                 deleteProductImage(product.image_url).catch(err => {
                     console.error("Fallo al eliminar imagen:", err);
                 });
             }
-
             setSuccessMessage('✅ Producto eliminado exitosamente');
-            await loadProducts(); // Recargamos la lista
-
-            setTimeout(() => {
-                setSuccessMessage('');
-            }, 3000);
+            await loadProducts(); 
+            setTimeout(() => { setSuccessMessage(''); }, 3000);
         } catch (error) {
             console.error('Error eliminando producto:', error);
             setSuccessMessage('❌ Error al eliminar el producto');
-            setTimeout(() => {
-                setSuccessMessage('');
-            }, 3000);
+            setTimeout(() => { setSuccessMessage(''); }, 3000);
         } finally {
             setShowDeleteConfirm(false);
             setProductToDelete(null);
@@ -133,14 +110,31 @@ export default function ProductList({ setShowSettingsMenu }: ProductListProps) {
         setProductToDelete(null);
     };
 
+    const handleEditBaseProduct = useCallback((product: Product) => {
+        setEditingProduct(product);
+        setShowForm(true);
+    }, []);
+
+    const handleManageVariants = useCallback((product: Product) => {
+        setManagingVariants(product);
+    }, []);
+
     const handleCancel = () => {
         setShowForm(false);
         setEditingProduct(null);
     };
 
+    // --- CAMBIO PRINCIPAL AQUÍ ---
+    // ELIMINAMOS este bloque que reemplazaba toda la pantalla:
+    /* if (managingVariants) {
+        return (
+            <VariantManager ... />
+        );
+    }
+    */
+    
     if (loading) {
         return (
-            // CORREGIDO: Se elimina title=""
             <MainLayout>
                 <div className="flex items-center justify-center h-64">
                     <div className="text-gray-500 dark:text-gray-400">Cargando productos...</div>
@@ -150,16 +144,13 @@ export default function ProductList({ setShowSettingsMenu }: ProductListProps) {
     }
 
     return (
-        // CORREGIDO: Se elimina title=""
         <MainLayout>
-            {/* NUEVO: Page Header con el botón de Configuración */}
             <PageHeader
                 title="Productos"
                 showSettingsMenu={false}
                 setShowSettingsMenu={setShowSettingsMenu}
             />
 
-            {/* Mensaje de éxito/error */}
             {successMessage && (
                 <div className={`mb-6 p-4 rounded-lg shadow-lg animate-slide-down ${successMessage.includes('❌')
                     ? 'bg-red-50 border-2 border-red-500 text-red-800 dark:bg-red-900 dark:border-red-700 dark:text-red-200'
@@ -194,12 +185,15 @@ export default function ProductList({ setShowSettingsMenu }: ProductListProps) {
                         <ProductCard
                             key={product.id}
                             product={product}
-                            onEdit={handleEdit}
+                            onEdit={handleEditBaseProduct} 
+                            onManageVariants={handleManageVariants} 
                             onDelete={handleDeleteClick}
                         />
                     ))}
                 </div>
             )}
+
+            {/* --- MODALES (Se renderizan por encima del contenido) --- */}
 
             {showForm && (
                 <ProductForm
@@ -209,7 +203,15 @@ export default function ProductList({ setShowSettingsMenu }: ProductListProps) {
                 />
             )}
 
-            {/* Modal de confirmación de eliminación */}
+            {/* NUEVO LUGAR PARA EL GESTOR DE VARIANTES */}
+            {managingVariants && (
+                <VariantManager 
+                    product={managingVariants}
+                    onClose={() => setManagingVariants(null)} 
+                    onVariantsUpdated={loadProducts} 
+                />
+            )}
+
             {showDeleteConfirm && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-md">
