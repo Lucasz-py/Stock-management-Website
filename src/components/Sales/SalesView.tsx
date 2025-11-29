@@ -12,7 +12,7 @@ import {
 import MainLayout from '../Layout/MainLayout';
 import PageHeader from '../Layout/PageHeader'; 
 import VariantSelector from './VariantSelector'; 
-import { Trash2 } from 'lucide-react'; // IMPORTADO
+import { Trash2, Banknote, CreditCard, ShoppingCart, ShoppingBag } from 'lucide-react'; // IMPORTADO ShoppingCart
 
 interface CartItem {
     product: Product;
@@ -32,6 +32,7 @@ export default function SalesView({ setShowSettingsMenu }: SalesViewProps) {
     const [loading, setLoading] = useState(true);
     const [successMessage, setSuccessMessage] = useState('');
     const [selectedProductForVariant, setSelectedProductForVariant] = useState<Product | null>(null);
+    const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer'>('cash');
 
     useEffect(() => {
         loadProducts();
@@ -165,6 +166,7 @@ export default function SalesView({ setShowSettingsMenu }: SalesViewProps) {
                     quantity: item.quantity,
                     sale_price: item.product.sale_price,
                     total: item.product.sale_price * item.quantity,
+                    payment_method: paymentMethod, 
                 });
 
                 if (item.variant) {
@@ -180,6 +182,7 @@ export default function SalesView({ setShowSettingsMenu }: SalesViewProps) {
             await loadProducts(); 
             setCart([]);
             setSearchTerm('');
+            setPaymentMethod('cash'); 
             setSuccessMessage(`✅ ¡Venta registrada exitosamente!`);
             setTimeout(() => setSuccessMessage(''), 5000);
 
@@ -212,7 +215,13 @@ export default function SalesView({ setShowSettingsMenu }: SalesViewProps) {
     return (
         <MainLayout>
             <PageHeader
-                title="Ventas"
+                title={
+                    // Usamos un div con flex para alinear horizontalmente
+                    <div className="flex items-center gap-3"> 
+                        <ShoppingBag className="w-8 h-8 text-white-600" />
+                        <span>Ventas</span>
+                    </div>
+                }
                 showSettingsMenu={false}
                 setShowSettingsMenu={setShowSettingsMenu}
             />
@@ -260,10 +269,10 @@ export default function SalesView({ setShowSettingsMenu }: SalesViewProps) {
                         ) : (
                             <div>
                                 <div className="p-4 bg-blue-200 dark:bg-blue-900 border-b border-blue-300 dark:border-blue-800">
-                                    <p className="text-sm text-blue-900 dark:text-blue-200 font-medium">
+                                    <p className="text-base tex-blue-900 dark:text-blue-200 font-bold">
                                         📋 Todos los productos ({products.length})
                                     </p>
-                                    <p className="text-xs text-blue-800 dark:text-blue-300 mt-1">
+                                    <p className="text-sm text-blue-800 dark:text-blue-300 mt-1">
                                         Haz clic en un producto para agregarlo al carrito
                                     </p>
                                 </div>
@@ -324,8 +333,9 @@ export default function SalesView({ setShowSettingsMenu }: SalesViewProps) {
                         </div>
 
                         {cart.length === 0 ? (
-                            <div className="p-12 text-center">
-                                <div className="text-6xl mb-4">🛒</div>
+                            <div className="p-12 text-center flex flex-col items-center justify-center">
+                                {/* CAMBIO: Icono ShoppingCart de Lucide */}
+                                <ShoppingCart className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
                                 <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
                                     Carrito vacío
                                 </h3>
@@ -353,7 +363,6 @@ export default function SalesView({ setShowSettingsMenu }: SalesViewProps) {
                                                     className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-2 rounded-lg transition"
                                                     title="Eliminar del carrito"
                                                 >
-                                                    {/* CAMBIO: Icono Trash2 */}
                                                     <Trash2 className="w-5 h-5" />
                                                 </button>
                                             </div>
@@ -371,7 +380,6 @@ export default function SalesView({ setShowSettingsMenu }: SalesViewProps) {
                                                         min="1"
                                                         value={item.quantity}
                                                         onChange={(e) => updateCartQuantity(index, parseInt(e.target.value) || 1)}
-                                                        // CAMBIO: Clases para ocultar flechas
                                                         className="w-16 text-center border border-gray-300 dark:border-gray-600 rounded-lg py-1 font-semibold bg-white dark:bg-gray-800 text-gray-800 dark:text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                     />
                                                     <button
@@ -392,6 +400,37 @@ export default function SalesView({ setShowSettingsMenu }: SalesViewProps) {
                                 </div>
 
                                 <div className="p-6 bg-blue-50 dark:bg-gray-700 border-t-2 border-blue-200 dark:border-gray-600">
+                                    <div className="mb-6">
+                                        <p className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-2">Método de Pago:</p>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => setPaymentMethod('cash')}
+                                                className={`flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all duration-200 font-bold ${
+                                                    paymentMethod === 'cash' 
+                                                        ? 'bg-green-50 border-green-500 text-green-700 dark:bg-green-900/30 dark:border-green-500 dark:text-green-400' 
+                                                        : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-400'
+                                                }`}
+                                            >
+                                                <Banknote className="w-5 h-5" />
+                                                Efectivo
+                                            </button>
+                                            
+                                            <button
+                                                type="button"
+                                                onClick={() => setPaymentMethod('transfer')}
+                                                className={`flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all duration-200 font-bold ${
+                                                    paymentMethod === 'transfer' 
+                                                        ? 'bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-900/30 dark:border-blue-500 dark:text-blue-400' 
+                                                        : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-400'
+                                                }`}
+                                            >
+                                                <CreditCard className="w-5 h-5" />
+                                                Transfer.
+                                            </button>
+                                        </div>
+                                    </div>
+
                                     <div className="flex justify-between items-center mb-4">
                                         <span className="text-lg font-bold text-gray-800 dark:text-white">Total:</span>
                                         <span className="text-3xl font-bold text-green-600 dark:text-green-400">
@@ -401,7 +440,7 @@ export default function SalesView({ setShowSettingsMenu }: SalesViewProps) {
 
                                     <button
                                         onClick={handleCompleteSale}
-                                        className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg transition text-lg"
+                                        className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg transition text-lg shadow-lg hover:shadow-xl transform active:scale-95"
                                     >
                                         ✓ Completar Venta
                                     </button>

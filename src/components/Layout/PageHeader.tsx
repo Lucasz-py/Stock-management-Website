@@ -1,7 +1,7 @@
-import { type Dispatch, type SetStateAction } from 'react';
+import { type Dispatch, type SetStateAction, type ReactNode } from 'react';
 
 interface PageHeaderProps {
-    title: string;
+    title: ReactNode;
     showSettingsMenu: boolean;
     setShowSettingsMenu: Dispatch<SetStateAction<boolean>>;
 }

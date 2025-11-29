@@ -221,12 +221,14 @@ export const getSales = async () => {
     return data;
 };
 
+// AHORA ACEPTA payment_method
 export const addSale = async (sale: {
     product_id: string;
     product_name: string;
     quantity: number;
     sale_price: number;
     total: number;
+    payment_method: 'cash' | 'transfer'; // Nuevo campo obligatorio
 }) => {
     const { data, error } = await supabase
         .from('sales')

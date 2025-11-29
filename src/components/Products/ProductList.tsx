@@ -15,6 +15,7 @@ import ProductForm from './ProductForm';
 import MainLayout from '../Layout/MainLayout';
 import PageHeader from '../Layout/PageHeader'; 
 import VariantManager from '../Variants/VariantManager'; 
+import { PackageOpen } from 'lucide-react';
 
 interface ProductListProps {
     setShowSettingsMenu: Dispatch<SetStateAction<boolean>>;
@@ -146,7 +147,12 @@ export default function ProductList({ setShowSettingsMenu }: ProductListProps) {
     return (
         <MainLayout>
             <PageHeader
-                title="Productos"
+                title={
+                    <div className="flex items-center gap-3">
+                        <PackageOpen className="w-8 h-8 text-white-600"/>
+                        <span>Productos</span>
+                    </div>
+                }
                 showSettingsMenu={false}
                 setShowSettingsMenu={setShowSettingsMenu}
             />

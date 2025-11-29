@@ -6,6 +6,7 @@ import { useSettings } from '../../contexts/SettingsContext';
 import StockItem from './StockItem';
 import MainLayout from '../Layout/MainLayout';
 import PageHeader from '../Layout/PageHeader'; 
+import {Warehouse} from 'lucide-react';
 
 interface StockManagementProps {
     setShowSettingsMenu: Dispatch<SetStateAction<boolean>>;
@@ -74,7 +75,13 @@ export default function StockManagement({ setShowSettingsMenu }: StockManagement
     return (
         <MainLayout>
             <PageHeader
-                title="Gestión de Stock"
+                title={
+                    // Usamos un div con flex para alinear horizontalmente
+                    <div className="flex items-center gap-3"> 
+                        <Warehouse className="w-8 h-8 text-white-600" />
+                        <span>Gestión de Stock</span>
+                    </div>
+                }
                 showSettingsMenu={false}
                 setShowSettingsMenu={setShowSettingsMenu}
             />

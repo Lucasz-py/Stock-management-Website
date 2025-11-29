@@ -25,9 +25,10 @@ export default function Sidebar({ activeView, setActiveView, onLogout }: Sidebar
             {/* 1. Logo Superior */}
             <div className="p-6 border-b border-gray-700">
                 <img
-                    src="/logoblanco.png" // Tu logo de "Abrazo de Luz"
+                    src="/logoblanco.png" 
                     alt="Logo"
-                    className="w-40 mx-auto"
+                    // CAMBIO: Agregado pointer-events-none y select-none
+                    className="w-40 mx-auto pointer-events-none select-none"
                 />
             </div>
 
@@ -38,7 +39,6 @@ export default function Sidebar({ activeView, setActiveView, onLogout }: Sidebar
                         <li key={item.id}>
                             <button
                                 onClick={() => setActiveView(item.id)}
-                                // CAMBIO: Nuevo gradiente personalizado
                                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${activeView === item.id
                                     ? 'bg-gradient-to-r from-abrazo-dark via-abrazo-mid to-abrazo-dark text-white' 
                                     : 'text-gray-300 hover:bg-gray-800'
@@ -57,7 +57,8 @@ export default function Sidebar({ activeView, setActiveView, onLogout }: Sidebar
                 <img
                     src="/mandala.png"
                     alt="Mandala"
-                    className="absolute bottom-0 left-0 w-32 h-auto opacity-30 invert"
+                    // CAMBIO: Agregado pointer-events-none y select-none
+                    className="absolute bottom-0 left-0 w-32 h-auto opacity-30 invert pointer-events-none select-none"
                 />
             </div>
 

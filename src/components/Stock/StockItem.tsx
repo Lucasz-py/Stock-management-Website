@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { type Product, type ProductVariant } from '../../types';
-import { getVariantsByProductId, updateVariant, updateParentProductStock } from '../../lib/supabase';
-import { Package, X, AlertCircle } from 'lucide-react';
+import { getVariantsByProductId, updateVariant, updateParentProductStock, updateProduct } from '../../lib/supabase';
+import { Package, X, AlertCircle, Search } from 'lucide-react';
 
 interface StockItemProps {
     product: Product;
@@ -14,13 +14,19 @@ export default function StockItem({ product, onStockUpdated }: StockItemProps) {
     const [loadingVariants, setLoadingVariants] = useState(false);
     const [imageError, setImageError] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         if (showModal) {
             loadVariants();
             setImageError(false);
             setErrorMessage(null);
+            setSearchTerm('');
+            document.body.style.overflow = 'hidden'; 
+        } else {
+            document.body.style.overflow = 'unset';
         }
+        return () => { document.body.style.overflow = 'unset'; };
     }, [showModal]);
 
     const loadVariants = async () => {
@@ -37,53 +43,51 @@ export default function StockItem({ product, onStockUpdated }: StockItemProps) {
 
     const showTemporaryError = (msg: string) => {
         setErrorMessage(msg);
-        setTimeout(() => {
-            setErrorMessage(null);
-        }, 3000);
+        setTimeout(() => { setErrorMessage(null); }, 3000);
     };
 
     const handleVariantStockUpdate = async (variant: ProductVariant, adjustment: number, operation: 'add' | 'subtract') => {
-        const newStock = operation === 'add' 
-            ? variant.stock + adjustment 
-            : variant.stock - adjustment;
-
+        const newStock = operation === 'add' ? variant.stock + adjustment : variant.stock - adjustment;
         if (newStock < 0) {
             showTemporaryError('⚠️ El stock no puede ser negativo');
             return;
         }
-
         try {
             await updateVariant(variant.id, { stock: newStock });
             await updateParentProductStock(product.id);
             await loadVariants();
             onStockUpdated();
         } catch (error) {
-            console.error("Error al actualizar stock:", error);
             showTemporaryError("❌ Error al actualizar stock");
         }
     };
 
+    const handleBaseStockUpdate = async (_dummyVariant: ProductVariant, adjustment: number, operation: 'add' | 'subtract') => {
+        const newStock = operation === 'add' ? product.stock + adjustment : product.stock - adjustment;
+        if (newStock < 0) {
+            showTemporaryError('⚠️ El stock no puede ser negativo');
+            return;
+        }
+        try {
+            await updateProduct(product.id, { stock: newStock });
+            onStockUpdated(); 
+            setShowModal(false); 
+        } catch (error) {
+            showTemporaryError("❌ Error al actualizar stock base");
+        }
+    };
+
     const getStockStatus = () => {
-        if (product.stock === 0) return {
-            color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-            label: 'Sin Stock'
-        };
-        if (product.stock < 5) return {
-            color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-            label: 'Stock Bajo'
-        };
-        return {
-            color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-            label: 'Stock OK'
-        };
+        if (product.stock === 0) return { color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200', label: 'Sin Stock' };
+        if (product.stock < 5) return { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200', label: 'Stock Bajo' };
+        return { color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', label: 'Stock OK' };
     };
 
     const status = getStockStatus();
 
-    const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-        e.currentTarget.src = 'https://via.placeholder.com/400x400?text=Sin+Imagen';
-        setImageError(true);
-    };
+    const filteredVariants = variants.filter(variant => 
+        variant.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     return (
         <>
@@ -100,13 +104,11 @@ export default function StockItem({ product, onStockUpdated }: StockItemProps) {
                     </div>
                 </td>
                 <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${status.color}`}>
-                        {status.label}
-                    </span>
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${status.color}`}>{status.label}</span>
                 </td>
                 <td className="px-6 py-4">
                     <span className="text-2xl font-bold text-gray-800 dark:text-white">{product.stock}</span>
-                    <span className="text-gray-500 dark:text-gray-400 ml-2">unidades (Total)</span>
+                    <span className="text-gray-500 dark:text-gray-400 ml-2">unidades</span>
                 </td>
                 <td className="px-6 py-4">
                     <button
@@ -119,90 +121,114 @@ export default function StockItem({ product, onStockUpdated }: StockItemProps) {
             </tr>
 
             {showModal && (
-                <tr>
-                    <td colSpan={4}>
-                        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-                            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col md:flex-row relative">
-                                
-                                {errorMessage && (
-                                    <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 animate-bounce">
-                                        <div className="bg-red-500 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2 font-medium">
-                                            <AlertCircle className="w-5 h-5" />
-                                            {errorMessage}
-                                        </div>
-                                    </div>
-                                )}
-
-                                <button 
-                                    onClick={() => setShowModal(false)}
-                                    className="absolute top-4 right-4 p-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition z-10"
-                                >
-                                    <X className="w-6 h-6 text-gray-500 dark:text-gray-400" />
-                                </button>
-
-                                <div className="md:w-2/5 h-64 md:h-auto bg-gray-100 dark:bg-gray-800 flex items-center justify-center relative">
-                                    <img
-                                        src={product.image_url}
-                                        alt={product.name}
-                                        className={`w-full h-full object-cover transition-opacity duration-300 ${imageError ? 'opacity-50' : 'opacity-100'}`}
-                                        onError={handleImageError}
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent md:bg-gradient-to-r md:from-transparent md:to-black/10 pointer-events-none"></div>
-                                </div>
-
-                                <div className="flex-1 flex flex-col h-full p-6 md:p-8 overflow-hidden">
-                                    <div className="mb-6 pr-8">
-                                        <h3 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2 mb-1">
-                                            <Package className="text-purple-600" />
-                                            Gestionar Stock
-                                        </h3>
-                                        <p className="text-lg text-gray-600 dark:text-gray-300 font-medium">
-                                            {product.name}
-                                        </p>
-                                    </div>
-
-                                    <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                                        {loadingVariants ? (
-                                            <div className="text-center py-12 text-gray-500 flex flex-col items-center justify-center h-full">
-                                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mb-4"></div>
-                                                Cargando variantes...
-                                            </div>
-                                        ) : variants.length === 0 ? (
-                                            <div className="text-center py-12 bg-gray-50 dark:bg-gray-800/50 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center h-full">
-                                                <Package className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
-                                                <p className="text-gray-600 dark:text-gray-300 font-medium">
-                                                    No hay variantes configuradas.
-                                                </p>
-                                                <p className="text-sm text-gray-500 mt-2">
-                                                    Ve a la sección "Productos" para agregar aromas o tipos primero.
-                                                </p>
-                                            </div>
-                                        ) : (
-                                            <div className="space-y-3 pb-4">
-                                                {variants.map(variant => (
-                                                    <VariantStockRow 
-                                                        key={variant.id} 
-                                                        variant={variant} 
-                                                        onUpdate={handleVariantStockUpdate} 
-                                                    />
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
-                                        <button
-                                            onClick={() => setShowModal(false)}
-                                            className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-2.5 rounded-lg transition font-medium dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
-                                        >
-                                            Cerrar
-                                        </button>
-                                    </div>
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-5xl h-[85vh] flex overflow-hidden relative">
+                        
+                        {errorMessage && (
+                            <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-50 animate-bounce">
+                                <div className="bg-red-500 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2 font-medium">
+                                    <AlertCircle className="w-5 h-5" />
+                                    {errorMessage}
                                 </div>
                             </div>
+                        )}
+
+                        <button 
+                            onClick={() => setShowModal(false)}
+                            className="absolute top-4 right-4 z-20 p-2 bg-white/10 hover:bg-black/10 text-gray-500 dark:text-gray-400 rounded-full transition"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+
+                        <div className="hidden md:block w-1/3 h-full relative bg-gray-100 dark:bg-gray-800">
+                            <img
+                                src={product.image_url}
+                                alt={product.name}
+                                className={`w-full h-full object-cover transition-opacity duration-300 ${imageError ? 'opacity-50' : 'opacity-100'}`}
+                                onError={() => setImageError(true)}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
+                            <div className="absolute bottom-6 left-6 right-6 text-white">
+                                <h3 className="text-xl font-bold drop-shadow-md">{product.name}</h3>
+                                <p className="text-sm opacity-90 mt-1">Gestionando inventario</p>
+                            </div>
                         </div>
-                    </td>
-                </tr>
+
+                        <div className="flex-1 flex flex-col h-full w-full md:w-2/3 bg-white dark:bg-gray-900">
+                            <div className="p-6 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                                        <Package className="w-6 h-6 text-purple-600" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-bold text-gray-800 dark:text-white">Gestionar Stock</h2>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 md:hidden">{product.name}</p>
+                                    </div>
+                                </div>
+
+                                {variants.length > 0 && (
+                                    <div className="mt-4 relative">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                        <input
+                                            type="text"
+                                            placeholder="Buscar aroma o variante..."
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none text-gray-800 dark:text-white transition"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto min-h-0 p-6 space-y-3 custom-scrollbar">
+                                {loadingVariants ? (
+                                    <div className="h-full flex flex-col items-center justify-center text-gray-500">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mb-4"></div>
+                                        <p>Cargando stock...</p>
+                                    </div>
+                                ) : variants.length === 0 ? (
+                                    <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 rounded-xl p-6 text-center">
+                                        <p className="text-blue-800 dark:text-blue-300 font-medium mb-1">Producto Único</p>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Este producto no tiene variantes configuradas.</p>
+                                        
+                                        <VariantStockRow 
+                                            variant={{
+                                                id: product.id, 
+                                                product_id: '',
+                                                name: "Stock General",
+                                                stock: product.stock,
+                                                purchase_price: product.purchase_price,
+                                                sale_price: product.sale_price
+                                            }} 
+                                            onUpdate={handleBaseStockUpdate} 
+                                        />
+                                    </div>
+                                ) : filteredVariants.length === 0 ? (
+                                    <div className="text-center py-12 text-gray-500">
+                                        No se encontraron resultados para "{searchTerm}"
+                                    </div>
+                                ) : (
+                                    filteredVariants.map(variant => (
+                                        <VariantStockRow 
+                                            key={variant.id} 
+                                            variant={variant} 
+                                            onUpdate={handleVariantStockUpdate} 
+                                        />
+                                    ))
+                                )}
+                            </div>
+
+                            <div className="p-4 border-t border-gray-200 dark:border-gray-800 flex justify-end bg-gray-50/50 dark:bg-gray-900 flex-shrink-0">
+                                <button
+                                    onClick={() => setShowModal(false)}
+                                    className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 px-6 py-2 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition shadow-sm"
+                                >
+                                    Cerrar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
         </>
     );
@@ -224,51 +250,55 @@ function VariantStockRow({ variant, onUpdate }: VariantStockRowProps) {
     };
 
     return (
-        // CAMBIO: Añadido 'relative overflow-hidden pl-6' para acomodar la línea de color
-        <div className="relative overflow-hidden flex items-center justify-between p-4 pl-6 bg-gray-50 dark:bg-gray-800/80 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-700 transition-colors">
+        <div className="relative group flex items-center justify-between p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-purple-300 dark:hover:border-purple-600 transition-all shadow-sm">
             
-            {/* NUEVO: Línea vertical de color */}
             <div 
-                className="absolute left-0 top-0 bottom-0 w-1.5" 
-                style={{ backgroundColor: variant.color || '#8B5CF6' }} 
+                className="absolute left-0 top-3 bottom-3 w-1.5 rounded-r-full" 
+                style={{ backgroundColor: variant.color || '#94a3b8' }} 
             />
 
-            <div className="flex-1 pr-4">
-                <p className="font-bold text-gray-800 dark:text-white text-lg">{variant.name}</p>
-                <div className="flex items-center gap-2 mt-1">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Stock actual:</p>
-                    <span className={`font-mono font-bold text-md px-2 py-0.5 rounded-md ${variant.stock < 5 ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'}`}>
+            <div className="pl-5 flex-1 min-w-0 pr-4">
+                <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-bold text-gray-800 dark:text-white text-lg truncate">
+                        {variant.name}
+                    </h4>
+                </div>
+                <div className="flex items-center gap-2">
+                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Stock actual:</p>
+                    <span className={`font-mono font-bold text-sm px-2 py-0.5 rounded ${variant.stock < 5 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`}>
                         {variant.stock}
                     </span>
                 </div>
             </div>
 
-            <div className="flex items-center gap-2 bg-white dark:bg-gray-900 p-1 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-2">
+                {/* BOTÓN RESTAR (ROJO SIEMPRE) */}
                 <button
                     onClick={() => handleAction('subtract')}
                     disabled={!amount}
-                    className="p-2 text-red-500 hover:bg-red-50 rounded-md disabled:opacity-40 transition dark:hover:bg-red-900/20"
-                    title="Restar"
+                    className="w-10 h-10 flex items-center justify-center rounded-lg transition disabled:opacity-100 disabled:cursor-not-allowed bg-red-600 text-red-600 hover:bg-red-200 dark:bg-red-900/40 dark:text-red-400 dark:hover:bg-red-900/60"
                 >
-                    <span className="text-xl">➖</span>
+                    <span className="text-lg font-bold">−</span>
                 </button>
                 
-                <input
-                    type="number"
-                    min="1"
-                    placeholder="Cant."
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    className="w-20 px-2 py-1 border-0 text-center focus:ring-0 font-mono text-lg bg-transparent dark:text-white outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
+                <div className="relative">
+                    <input
+                        type="number"
+                        min="1"
+                        placeholder="Cant."
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        className="w-20 h-10 px-2 text-center border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-white font-mono focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none placeholder:text-gray-400 dark:placeholder:text-gray-600"
+                    />
+                </div>
                 
+                {/* BOTÓN SUMAR (VERDE SIEMPRE) */}
                 <button
                     onClick={() => handleAction('add')}
                     disabled={!amount}
-                    className="p-2 text-green-500 hover:bg-green-50 rounded-md disabled:opacity-40 transition dark:hover:bg-green-900/20"
-                    title="Sumar"
+                    className="w-10 h-10 flex items-center justify-center rounded-lg transition disabled:opacity-100 disabled:cursor-not-allowed bg-green-600 text-green-600 hover:bg-green-200 dark:bg-green-900/40 dark:text-green-400 dark:hover:bg-green-900/60"
                 >
-                    <span className="text-xl">➕</span>
+                    <span className="text-lg font-bold">+</span>
                 </button>
             </div>
         </div>
